@@ -10,6 +10,7 @@
 - Reports route registration and tenant scoping
 
 ## Run
+
 ```bash
 cd backend
 python -m pip install -r requirements.txt
@@ -17,6 +18,7 @@ pytest -q
 ```
 
 Frontend:
+
 ```bash
 cd frontend
 npm install
