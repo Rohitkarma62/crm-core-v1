@@ -1,8 +1,9 @@
 """stage import rows"""
 from alembic import op
 import sqlalchemy as sa
+
 revision = "20261001_stage_import_jobs"
-down_revision = "20261001_add_import_jobs"
+down_revision = "20261001_import_jobs"
 branch_labels = None
 depends_on = None
 
