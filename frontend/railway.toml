@@ -1,0 +1,9 @@
+[build]
+builder = "RAILPACK"
+
+[deploy]
+buildCommand = "npm install && npm run build"
+startCommand = "npm run preview -- --host 0.0.0.0 --port $PORT"
+healthcheckPath = "/"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
