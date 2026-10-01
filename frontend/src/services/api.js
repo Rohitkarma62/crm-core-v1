@@ -56,3 +56,9 @@ export async function resetPassword(token, password) {
   const { data: result } = await api.post("/api/v1/auth/reset-password", { token, password });
   return result;
 }
+
+
+export async function clearCompanyCrmData() {
+  const { data } = await api.delete("/api/v1/billing/company/clear-data");
+  return data;
+}
