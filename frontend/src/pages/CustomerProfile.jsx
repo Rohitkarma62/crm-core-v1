@@ -150,7 +150,7 @@ export default function CustomerProfile({ customerId, onBack }) {
             {assets.logo && <img className="invoice-logo" src={assets.logo} alt="Company logo" />}
             <div>
               <h2>{company?.name || "विश्वकर्मा फैब्रिकेशन वर्कशॉप"}</h2>
-              <p><b>मालिक:</b> {company?.owner_name || "युवराज कर्मा"}</p>
+              <p><b>मालिक</b></p>
               <p>{company?.phone || "9977932342 / 7089117898 / 9131766526"}</p>
               <p>{company?.address || "ग्राम घोटिया, जिला खरगोन, मध्य प्रदेश"}</p>
               {company?.gstin && <p><b>GSTIN:</b> {company.gstin}</p>}
@@ -187,8 +187,7 @@ export default function CustomerProfile({ customerId, onBack }) {
           <div className="invoice-signatures">
             {assets.stamp && <img className="invoice-stamp" src={assets.stamp} alt="Company stamp" />}
             {assets.signature && <img className="invoice-signature" src={assets.signature} alt="Owner signature" />}
-            <strong>{company?.owner_name || "युवराज कर्मा"}</strong>
-            <small>अधिकृत हस्ताक्षर / मालिक</small>
+            <small>मालिक के हस्ताक्षर</small>
           </div>
         </div>
       </div>
