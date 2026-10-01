@@ -44,7 +44,7 @@ export default function Dashboard({ onLogout, onEnquiries, onPipeline, onQuotati
     orderValue:orders.reduce((a,o)=>a+Number(o.amount||0),0),
     expenses:expenseTotal,
     estimatedProfit:orders.reduce((a,o)=>a+Number(o.amount||0),0)-expenseTotal
-  }),[leads,customers,orders]);
+  }),[leads,customers,orders,expenseTotal]);
 
   const stageCounts=useMemo(()=>["New Enquiry","Measurement","Quotation","Material Pending","Fabrication","Welding","Grinding","Painting","Ready","Delivered"].map(stage=>({stage,count:orders.filter(o=>o.stage===stage).length})),[orders]);
 
