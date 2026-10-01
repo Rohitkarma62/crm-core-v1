@@ -9,6 +9,8 @@ import Customers from "./pages/Customers";
 import Sales from "./pages/Sales";
 import ImportExport from "./pages/ImportExport";
 import Reports from "./pages/Reports";
+import CustomerProfile from "./pages/CustomerProfile";
+import CompanySettings from "./pages/CompanySettings";
 import "./styles.css";
 
 class ErrorBoundary extends Component {
@@ -50,11 +52,14 @@ function App() {
   const [auth, setAuth] = useState(Boolean(localStorage.getItem("crm_access_token")));
   const [mode, setMode] = useState("login");
   const [page, setPage] = useState("dashboard");
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
 
   if (auth) {
     return page === "leads" ? <Leads onBack={() => setPage("dashboard")} />
       : page === "pipeline" ? <Pipeline onBack={() => setPage("dashboard")} onLeads={() => setPage("leads")} />
-      : page === "customers" ? <Customers onBack={() => setPage("dashboard")} />
+      : page === "customers" ? <Customers onBack={() => setPage("dashboard")} onProfile={(id) => { setSelectedCustomer(id); setPage("customer-profile"); }} />
+      : page === "customer-profile" ? <CustomerProfile customerId={selectedCustomer} onBack={() => setPage("customers")} />
+      : page === "settings" ? <CompanySettings onBack={() => setPage("dashboard")} />
       : page === "sales" ? <Sales onBack={() => setPage("dashboard")} />
       : page === "import" ? <ImportExport onBack={() => setPage("dashboard")} />
       : page === "reports" ? <Reports onBack={() => setPage("dashboard")} />
@@ -66,6 +71,7 @@ function App() {
           onSales={() => setPage("sales")}
           onImport={() => setPage("import")}
           onReports={() => setPage("reports")}
+          onSettings={() => setPage("settings")}
         />;
   }
 
