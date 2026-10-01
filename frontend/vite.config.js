@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  // Relative asset paths keep the app working under the GitHub Pages project URL.
-  base: "./",
+  // GitHub Pages project URL: /crm-core-v1/
+  base: "/crm-core-v1/",
 });
