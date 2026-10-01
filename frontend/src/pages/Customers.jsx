@@ -8,7 +8,7 @@ export default function Customers({ onBack }) {
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState(false);\n  const [expanded, setExpanded] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -136,11 +136,11 @@ export default function Customers({ onBack }) {
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>Name</th><th>Phone</th><th>Company</th><th>Email</th><th>Actions</th></tr>
+              <tr><th>Name</th><th>Phone</th><th>Company</th><th>Email</th><th>Sales</th><th>Collected</th><th>Outstanding</th><th>Actions</th></tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="5" className="table-state">Loading customers...</td></tr>
+                <tr><td colSpan="8" className="table-state">Loading customers...</td></tr>
               ) : customers.length ? (
                 customers.map((c) => (
                   <tr key={c.id}>
@@ -155,7 +155,7 @@ export default function Customers({ onBack }) {
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan="5" className="table-state">No customers found.</td></tr>
+                <tr><td colSpan="8" className="table-state">No customers found.</td></tr>
               )}
             </tbody>
           </table>
