@@ -62,3 +62,38 @@
  .search-actions{width:100%}
  .search-actions .search-input{flex:1}
 }
+
+/* Pipeline mobile-first UX */
+.pipeline-head{justify-content:space-between}
+.pipeline-head>div:first-child{display:flex;flex-direction:column;gap:10px}
+.pipeline-head-actions{display:flex;gap:8px;align-items:center}
+.pipeline-head-actions button{margin:0}
+.pipeline-stage-tabs{padding:10px;overflow:hidden}
+.pipeline-tabs-scroll{display:flex;gap:8px;overflow-x:auto;padding:2px}
+.stage-tab{display:flex;align-items:center;gap:7px;white-space:nowrap;border:1px solid #e2e8f0;background:#fff;border-radius:10px;padding:10px 12px;cursor:pointer;color:#334155}
+.stage-tab b{background:#f1f5f9;border-radius:999px;padding:2px 7px;font-size:11px}
+.stage-tab.active{background:#111827;color:#fff;border-color:#111827}
+.stage-tab.active b{background:#374151;color:#fff}
+.pipeline-board{display:grid;grid-template-columns:repeat(7,minmax(210px,1fr));gap:14px;overflow-x:auto;padding:2px 2px 18px}
+.pipeline-column{background:#eef1f5;border:1px solid #e0e4ea;border-radius:14px;min-height:560px;padding:10px}
+.pipeline-column.active-column{border-color:#94a3b8;box-shadow:0 0 0 2px #94a3b818}
+.pipeline-move{display:flex;align-items:center;gap:7px;margin-top:12px;padding-top:10px;border-top:1px solid #eef2f7}
+.pipeline-move select{width:100%;min-width:0;height:36px;padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;font:inherit;font-size:13px}
+.pipeline-move span{font-size:11px;color:#64748b;white-space:nowrap}
+.empty-column{display:flex;flex-direction:column;align-items:center;gap:5px;color:#94a3b8;font-size:13px;text-align:center;padding:35px 10px;border:1px dashed #cbd5e1;border-radius:10px;background:#f8fafc}
+.empty-column span{font-size:24px}
+.empty-column strong{color:#64748b;font-size:13px}
+.empty-column small{font-size:11px}
+@media(max-width:700px){
+ .pipeline-page{padding:18px 14px 36px}
+ .pipeline-head{align-items:stretch}
+ .pipeline-head h1{font-size:34px}
+ .pipeline-head-actions{width:100%}
+ .pipeline-head-actions button{flex:1}
+ .pipeline-board{display:block;overflow:visible}
+ .pipeline-column{display:none;min-height:auto;margin-bottom:14px}
+ .pipeline-column.active-column{display:block}
+ .pipeline-column .pipeline-cards{min-height:120px}
+ .pipeline-stage-tabs{margin-bottom:14px}
+ .pipeline-card{cursor:default}
+}
