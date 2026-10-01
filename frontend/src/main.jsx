@@ -11,6 +11,8 @@ import Customers from "./pages/Customers";
 import CustomerProfile from "./pages/CustomerProfile";
 import Fabrication from "./pages/Fabrication";
 import CompanySettings from "./pages/CompanySettings";
+import Employees from "./pages/Employees";
+import Expenses from "./pages/Expenses";
 import "./styles.css";
 
 class ErrorBoundary extends Component {
@@ -48,6 +50,8 @@ function App() {
       : page === "customers" ? <Customers onBack={() => setPage("dashboard")} onProfile={(id) => { setSelectedCustomer(id); setPage("customer-profile"); }} />
       : page === "customer-profile" ? <CustomerProfile customerId={selectedCustomer} onBack={() => setPage("customers")} />
       : page === "fabrication" ? <Fabrication onBack={() => setPage("dashboard")} onPipeline={() => setPage("pipeline")} />
+      : page === "employees" ? <Employees onBack={() => setPage("dashboard")} />
+      : page === "expenses" ? <Expenses onBack={() => setPage("dashboard")} />
       : page === "settings" ? <CompanySettings onBack={() => setPage("dashboard")} />
       : <Dashboard
           onLogout={() => { localStorage.clear(); setAuth(false); }}
@@ -57,6 +61,8 @@ function App() {
           onCustomers={() => setPage("customers")}
           onFabrication={() => setPage("fabrication")}
           onSettings={() => setPage("settings")}
+          onEmployees={() => setPage("employees")}
+          onExpenses={() => setPage("expenses")}
         />;
   }
 
