@@ -276,3 +276,48 @@
 .invoice-signature{width:105px;max-height:52px;object-fit:contain}
 .invoice-signatures small{display:none;font-size:11px;color:#6b7280}
 @media(max-width:700px){.invoice-preview{padding:18px}.invoice-top{flex-direction:column}.invoice-meta{text-align:left}.invoice-customer{grid-template-columns:1fr}.invoice-payment-row{grid-template-columns:1fr 1fr}.invoice-footer{flex-direction:column}.invoice-signatures{align-self:flex-end}.invoice-brand h2{font-size:20px}}
+
+
+/* Fabrication workshop redesign */
+.fabrication-page{background:#f6f7f9}
+.fabrication-head{align-items:flex-start}
+.fabrication-head h1{margin:8px 0 0}
+.fab-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:0 0 20px}
+.fab-stats>div{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;box-shadow:0 2px 10px #00000008}
+.fab-stats span{display:block;color:#64748b;font-size:12px;margin-bottom:7px}
+.fab-stats strong{font-size:24px}
+.fab-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 18px}
+.fab-form label{display:flex;flex-direction:column;gap:7px;font-weight:600;font-size:14px}
+.fab-form input,.fab-form textarea{width:100%;padding:11px 12px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;font:inherit}
+.fab-form textarea{min-height:90px;resize:vertical}
+.fab-form .full-field{grid-column:1/-1}
+.fab-filter{display:flex;gap:6px;overflow-x:auto;max-width:100%;padding-bottom:3px}
+.fab-filter button{white-space:nowrap;border:1px solid #cbd5e1;background:#fff;color:#334155;border-radius:999px;padding:7px 11px;font-size:12px;cursor:pointer}
+.fab-filter button.active{background:#111827;color:#fff;border-color:#111827}
+.fab-orders{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fab-order{background:#fff;border:1px solid #e5e7eb;border-radius:13px;padding:15px}
+.fab-order-top{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #eef2f7;padding-bottom:11px}
+.fab-order-top>div{min-width:0;display:flex;flex-direction:column;gap:4px}
+.fab-order-top strong{font-size:16px}
+.fab-order-top small,.fab-order-body span,.fab-order-body small{color:#64748b;font-size:12px;overflow-wrap:anywhere}
+.fab-order-top>span{font-size:11px;font-weight:800;padding:5px 8px;border-radius:999px;background:#eef2f7;height:max-content;white-space:nowrap}
+.fab-order-body{display:flex;flex-direction:column;gap:6px;padding:12px 0}
+.fab-order-body>b{font-size:15px}
+.fab-order-actions{display:flex;gap:8px}
+.fab-order-actions select{flex:1;min-width:0;border:1px solid #cbd5e1;border-radius:8px;padding:8px;background:#fff}
+.fab-enquiries{display:flex;flex-direction:column}
+.fab-enquiries>div{display:grid;grid-template-columns:1fr 1.5fr auto;gap:12px;padding:12px 0;border-bottom:1px solid #eef2f7;align-items:center}
+.fab-enquiries>div:last-child{border-bottom:0}
+.fab-enquiries span{color:#64748b;font-size:13px;overflow-wrap:anywhere}
+.fab-enquiries b{white-space:nowrap}
+.fabrication-nav{background:#111827!important;color:#fff!important}
+@media(max-width:900px){.fab-stats{grid-template-columns:repeat(3,minmax(0,1fr))}.fab-orders{grid-template-columns:1fr}}
+@media(max-width:700px){
+ .fab-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .fab-form{grid-template-columns:1fr}
+ .fab-form .full-field{grid-column:auto}
+ .fab-enquiries>div{grid-template-columns:1fr auto}
+ .fab-enquiries span{grid-column:1/-1;grid-row:2}
+ .fab-enquiries b{grid-column:2;grid-row:1}
+ .fab-filter{width:100%}
+}
