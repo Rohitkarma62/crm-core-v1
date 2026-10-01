@@ -9,13 +9,16 @@ export default function Sales({ onBack }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [paymentId, setPaymentId] = useState(null);
+  const [payments, setPayments] = useState([]);
+  const [paymentForm, setPaymentForm] = useState({ amount: "", payment_method: "upi", reference: "" });
 
   async function load() {
     setLoading(true);
     try {
-      const [s, c] = await Promise.all([api.get("/api/v1/sales"), api.get("/api/v1/customers")]);
+      const [s, c, p] = await Promise.all([api.get("/api/v1/sales"), api.get("/api/v1/customers"), api.get("/api/v1/payments")]);
       setSales(s.data.items || []);
       setCustomers(c.data.items || []);
+      setPayments(p.data || []);
       setError("");
     } catch (e) {
       setError(e.response?.data?.detail || "Unable to load sales");
@@ -48,22 +51,21 @@ export default function Sales({ onBack }) {
 
   async function addPayment(sale) {
     if (paymentId) return;
+    const amount = Number(paymentForm.amount);
     const remaining = Number(sale.balance_amount);
-    const raw = window.prompt(`Outstanding: ₹${remaining.toFixed(2)}\nPayment amount:`);
-    if (!raw) return;
-    const amount = Number(raw);
-    if (!amount || amount <= 0) return;
+    if (!amount || amount <= 0) { setError("Payment amount enter karo."); return; }
+    if (amount > remaining) { setError("Payment ₹" + amount.toFixed(2) + " outstanding ₹" + remaining.toFixed(2) + " se zyada hai."); return; }
     setPaymentId(sale.id);
     setError("");
     try {
-      await api.post("/api/v1/payments", { sale_id: sale.id, amount, payment_method: "manual" });
+      await api.post("/api/v1/payments", { sale_id: sale.id, amount, payment_method: paymentForm.payment_method, reference: paymentForm.reference || null });
+      setPaymentForm({ amount: "", payment_method: "upi", reference: "" });
       await load();
-    } catch (e) {
-      setError(e.response?.data?.detail || "Unable to add payment");
-    } finally {
-      setPaymentId(null);
-    }
+    } catch (e) { setError(e.response?.data?.detail || "Unable to add payment"); }
+    finally { setPaymentId(null); }
   }
+
+  function salePayments(saleId) { return payments.filter(p => p.sale_id === saleId && p.status === "completed"); }
 
   return (
     <main className="page sales-page">
@@ -94,7 +96,20 @@ export default function Sales({ onBack }) {
               {loading ? <tr><td colSpan="6" className="table-state">Loading sales...</td></tr> :
                 sales.length ? sales.map(s => {
                   const c = customers.find(x => x.id === s.customer_id);
-                  return <tr key={s.id}><td><strong>{c?.name || `Customer #${s.customer_id}`}</strong></td><td>₹{Number(s.amount).toFixed(2)}</td><td>₹{Number(s.paid_amount).toFixed(2)}</td><td>₹{Number(s.balance_amount).toFixed(2)}</td><td>{s.status}</td><td>{Number(s.balance_amount) > 0 && <button className="small" disabled={paymentId === s.id} onClick={() => addPayment(s)}>{paymentId === s.id ? "Saving..." : "Add Payment"}</button>}</td></tr>;
+                  const history = salePayments(s.id);
+                  const byMethod = history.reduce((acc, p) => { const key = p.payment_method || "other"; acc[key] = (acc[key] || 0) + Number(p.amount); return acc; }, {});
+                  return <React.Fragment key={s.id}>
+                    <tr><td><strong>{c?.name || `Customer #${s.customer_id}`}</strong></td><td>₹{Number(s.amount).toFixed(2)}</td><td>₹{Number(s.paid_amount).toFixed(2)}</td><td>₹{Number(s.balance_amount).toFixed(2)}</td><td>{s.status}</td><td></td></tr>
+                    <tr><td colSpan="6">
+                      <div className="payment-breakup"><strong>Payment Break-up</strong> {Object.keys(byMethod).length ? Object.entries(byMethod).map(([method, amount]) => <span key={method}>{method.toUpperCase()}: ₹{amount.toFixed(2)}</span>) : <span>No payments yet</span>}</div>
+                      {Number(s.balance_amount) > 0 && <div className="payment-entry">
+                        <input type="number" min="0.01" max={Number(s.balance_amount)} step="0.01" placeholder="Amount" value={paymentForm.amount} onChange={e => setPaymentForm({ ...paymentForm, amount: e.target.value })} />
+                        <select value={paymentForm.payment_method} onChange={e => setPaymentForm({ ...paymentForm, payment_method: e.target.value })}><option value="upi">UPI</option><option value="cash">Cash</option><option value="cheque">Cheque</option><option value="card">Card</option><option value="bank_transfer">Bank Transfer</option><option value="other">Other</option></select>
+                        <input placeholder="Reference / UTR / Cheque No. (optional)" value={paymentForm.reference} onChange={e => setPaymentForm({ ...paymentForm, reference: e.target.value })} />
+                        <button className="small" disabled={paymentId === s.id} onClick={() => addPayment(s)}>{paymentId === s.id ? "Saving..." : "Save Payment"}</button>
+                      </div>}
+                    </td></tr>
+                  </React.Fragment>;
                 }) : <tr><td colSpan="6" className="table-state">No sales found.</td></tr>}
             </tbody>
           </table>
