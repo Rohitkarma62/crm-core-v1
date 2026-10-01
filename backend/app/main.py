@@ -1,6 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from .config import settings
+from .database import engine
 from .routers.auth import router as auth_router
 from .routers.leads import router as leads_router
 from .routers.pipeline import router as pipeline_router
@@ -34,4 +36,11 @@ app.include_router(reports_router)
 
 @app.get("/health", tags=["System"])
 def health():
-    return {"status": "ok", "service": settings.app_name}
+    # The healthcheck must prove the API can reach its database, not merely that
+    # the process started. This is especially important for production Postgres.
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="database unavailable") from exc
+    return {"status": "ok", "service": settings.app_name, "database": "ok"}
