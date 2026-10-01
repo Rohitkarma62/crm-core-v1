@@ -241,3 +241,7 @@
 .register-card textarea{width:100%;min-height:80px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:9px;font:inherit;resize:vertical}
 .registration-branding{margin-top:18px;padding:16px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc}
 .registration-branding p{font-size:13px;color:#64748b}
+
+
+/* Password reset */
+.forgot-link{background:transparent!important;color:#2563eb!important;padding:8px!important;margin-top:6px!important}.reset-back{margin-top:8px!important;color:#111827!important;background:#fff!important;border:1px solid #cbd5e1!important}.reset-card{max-width:440px}.reset-card .success-message{margin:14px 0}
