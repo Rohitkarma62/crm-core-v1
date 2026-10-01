@@ -2,12 +2,19 @@ from datetime import datetime
 from decimal import Decimal
 from pydantic import BaseModel, ConfigDict, Field
 
+class SalePaymentCreate(BaseModel):
+    amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
+    payment_method: str = Field(min_length=1, max_length=30)
+    payment_date: datetime | None = None
+    reference: str | None = Field(default=None, max_length=120)
+
 class SaleCreate(BaseModel):
     customer_id: int
     lead_id: int | None = None
     amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
     sale_date: datetime | None = None
     notes: str | None = None
+    payments: list[SalePaymentCreate] = Field(default_factory=list)
 
 class SaleUpdate(BaseModel):
     amount: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
