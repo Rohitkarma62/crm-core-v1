@@ -3,7 +3,7 @@ import { api, logout, clearCompanyCrmData } from "../services/api";
 
 const money = v => `₹${Number(v || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
-export default function Dashboard({ onLogout, onEnquiries, onPipeline, onQuotations, onCustomers, onFabrication, onSettings, onEmployees, onExpenses }) {
+export default function Dashboard({ onLogout, onEnquiries, onPipeline, onQuotations, onCustomers, onFabrication, onSettings, onEmployees, onExpenses, onMaterials, onPayments, onReports }) {
   const [user] = useState(()=>{try{return JSON.parse(localStorage.getItem("crm_user")||"{}")}catch{return{}}});
   const [business] = useState(()=>{try{return JSON.parse(localStorage.getItem("crm_business")||"{}")}catch{return{}}});
   const [orders,setOrders]=useState([]);
@@ -61,12 +61,15 @@ export default function Dashboard({ onLogout, onEnquiries, onPipeline, onQuotati
         <div><h1>Workshop Dashboard</h1></div>
         <div className="dashboard-actions">
           <button onClick={onEnquiries}>📋 Enquiries</button>
-          <button onClick={onPipeline}>🔄 Pipeline</button>
+          <button onClick={onPipeline}>🏗️ Production</button>
           <button className="fabrication-nav" onClick={onQuotations}>📝 Quotations</button>
           <button className="fabrication-nav" onClick={onFabrication}>🏭 Work Orders</button>
           <button onClick={onCustomers}>👥 Customers</button>
           <button onClick={onEmployees}>👷 Employees</button>
           <button onClick={onExpenses}>💰 Expenses</button>
+          <button onClick={onMaterials}>📦 Materials</button>
+          <button onClick={onPayments}>💳 Payments</button>
+          <button onClick={onReports}>📊 Reports</button>
           <button onClick={onSettings}>⚙️ Company / Bill</button>
           <button onClick={load}>↻ Refresh</button>
         </div>
@@ -118,6 +121,8 @@ export default function Dashboard({ onLogout, onEnquiries, onPipeline, onQuotati
             <button onClick={onCustomers}>+ Customer</button>
             <button onClick={onEmployees}>+ Employee</button>
             <button onClick={onExpenses}>+ Expense</button>
+            <button onClick={onMaterials}>+ Material</button>
+            <button onClick={onPayments}>+ Payment</button>
           </div>
         </div>
       </section>
