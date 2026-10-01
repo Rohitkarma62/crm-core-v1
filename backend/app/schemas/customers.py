@@ -37,6 +37,11 @@ class CustomerResponse(BaseModel):
     address: str | None
     created_at: datetime
     updated_at: datetime
+    total_sales: float = 0
+    collected: float = 0
+    outstanding: float = 0
+    payment_breakup: list[dict] = []
+    payment_history: list[CustomerPayment] = []
 
 class CustomerListResponse(BaseModel):
     items: list[CustomerResponse]
