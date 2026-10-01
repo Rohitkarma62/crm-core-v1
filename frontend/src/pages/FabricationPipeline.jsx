@@ -7,7 +7,8 @@ export default function FabricationPipeline({ onBack, onEnquiries }) {
   const [orders,setOrders]=useState([]);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState("");
-  const [dragged,setDragged]=useState(null);\n  const [activeStage,setActiveStage]=useState(stages[0]);
+  const [dragged,setDragged]=useState(null);
+  const [activeStage,setActiveStage]=useState(stages[0]);
 
   async function load(){
     setLoading(true);setError("");
