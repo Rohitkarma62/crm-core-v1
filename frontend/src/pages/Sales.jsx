@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { api } from "../services/api";
 
 export default function Sales({ onBack }) {
-  const needsReference = method => String(method || "").toLowerCase() !== "cash";
-  const referencePlaceholder = method => String(method || "").toLowerCase() === "upi" ? "UTR / UPI Reference" : String(method || "").toLowerCase() === "cheque" ? "Cheque No." : String(method || "").toLowerCase() === "bank_transfer" ? "Transaction Reference" : String(method || "").toLowerCase() === "card" ? "Card Reference (optional)" : "Reference (optional)";
+  const needsReference = method => true;
+  const referencePlaceholder = method => String(method || "").toLowerCase() === "upi" ? "UTR / UPI Reference" : String(method || "").toLowerCase() === "cheque" ? "Cheque No." : String(method || "").toLowerCase() === "bank_transfer" ? "Transaction Reference" : String(method || "").toLowerCase() === "card" ? "Card Reference (optional)" : "Sandarbh / Note (optional)";
   const [sales, setSales] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [form, setForm] = useState({ customer_id: "", amount: "", notes: "" });
