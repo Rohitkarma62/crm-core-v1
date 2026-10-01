@@ -139,7 +139,7 @@ export default function Customers({ onBack, onProfile }) {
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>Name</th><th>Phone</th><th>Company</th><th>Email</th><th>Sales</th><th>Collected</th><th>Outstanding</th><th>Actions</th></tr>
+              <tr><th>Name</th><th>Phone</th><th>Company</th><th>Email</th><th>Job Value</th><th>Paid</th><th>Balance</th><th>Actions</th></tr>
             </thead>
             <tbody>
               {loading ? (
