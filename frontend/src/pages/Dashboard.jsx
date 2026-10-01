@@ -3,12 +3,13 @@ import { api, logout, clearCompanyCrmData } from "../services/api";
 
 const money = v => `₹${Number(v || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
-export default function Dashboard({ onLogout, onEnquiries, onPipeline, onQuotations, onCustomers, onFabrication, onSettings }) {
+export default function Dashboard({ onLogout, onEnquiries, onPipeline, onQuotations, onCustomers, onFabrication, onSettings, onEmployees, onExpenses }) {
   const [user] = useState(()=>{try{return JSON.parse(localStorage.getItem("crm_user")||"{}")}catch{return{}}});
   const [business] = useState(()=>{try{return JSON.parse(localStorage.getItem("crm_business")||"{}")}catch{return{}}});
   const [orders,setOrders]=useState([]);
   const [customers,setCustomers]=useState([]);
   const [leads,setLeads]=useState([]);
+  const [expenseTotal,setExpenseTotal]=useState(0);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState("");
 
@@ -18,9 +19,10 @@ export default function Dashboard({ onLogout, onEnquiries, onPipeline, onQuotati
       const [o,c,l]=await Promise.all([
         api.get("/api/v1/fabrication"),
         api.get("/api/v1/customers"),
-        api.get("/api/v1/leads")
+        api.get("/api/v1/leads"),
+        api.get("/api/v1/workshop-finance/expenses")
       ]);
-      setOrders(o.data.items||[]);setCustomers(c.data.items||[]);setLeads(l.data.items||[]);
+      setOrders(o.data.items||[]);setCustomers(c.data.items||[]);setLeads(l.data.items||[]);setExpenseTotal(e.data.total||0);
     }catch(e){setError(e.response?.data?.detail||"Workshop data load nahi ho saka.");}
     finally{setLoading(false);}
   }
@@ -39,7 +41,9 @@ export default function Dashboard({ onLogout, onEnquiries, onPipeline, onQuotati
     orders:orders.length,
     production:orders.filter(o=>!["New Enquiry","Ready","Delivered"].includes(o.stage)).length,
     ready:orders.filter(o=>o.stage==="Ready").length,
-    orderValue:orders.reduce((a,o)=>a+Number(o.amount||0),0)
+    orderValue:orders.reduce((a,o)=>a+Number(o.amount||0),0),
+    expenses:expenseTotal,
+    estimatedProfit:orders.reduce((a,o)=>a+Number(o.amount||0),0)-expenseTotal
   }),[leads,customers,orders]);
 
   const stageCounts=useMemo(()=>["New Enquiry","Measurement","Quotation","Material Pending","Fabrication","Welding","Grinding","Painting","Ready","Delivered"].map(stage=>({stage,count:orders.filter(o=>o.stage===stage).length})),[orders]);
@@ -61,6 +65,8 @@ export default function Dashboard({ onLogout, onEnquiries, onPipeline, onQuotati
           <button className="fabrication-nav" onClick={onQuotations}>📝 Quotations</button>
           <button className="fabrication-nav" onClick={onFabrication}>🏭 Work Orders</button>
           <button onClick={onCustomers}>👥 Customers</button>
+          <button onClick={onEmployees}>👷 Employees</button>
+          <button onClick={onExpenses}>💰 Expenses</button>
           <button onClick={onSettings}>⚙️ Company / Bill</button>
           <button onClick={load}>↻ Refresh</button>
         </div>
@@ -81,6 +87,8 @@ export default function Dashboard({ onLogout, onEnquiries, onPipeline, onQuotati
         <div className="stat"><span>In Production</span><b>{stats.production}</b></div>
         <div className="stat"><span>Ready</span><b>{stats.ready}</b></div>
         <div className="stat"><span>Order Value</span><b>{money(stats.orderValue)}</b></div>
+        <div className="stat"><span>Expenses</span><b>{money(stats.expenses)}</b></div>
+        <div className="stat"><span>Balance After Expenses</span><b>{money(stats.estimatedProfit)}</b></div>
       </section>
 
       <section className="dashboard-grid">
@@ -108,6 +116,8 @@ export default function Dashboard({ onLogout, onEnquiries, onPipeline, onQuotati
             <button onClick={onQuotations}>+ Quotation</button>
             <button onClick={onFabrication}>+ New Work Order</button>
             <button onClick={onCustomers}>+ Customer</button>
+            <button onClick={onEmployees}>+ Employee</button>
+            <button onClick={onExpenses}>+ Expense</button>
           </div>
         </div>
       </section>
