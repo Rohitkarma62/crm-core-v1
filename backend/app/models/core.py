@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, JSON
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 from ..database import Base
 
 class Business(Base):
@@ -10,6 +10,11 @@ class Business(Base):
     email: Mapped[str | None] = mapped_column(String(255), unique=True)
     phone: Mapped[str | None] = mapped_column(String(30))
     logo: Mapped[str | None] = mapped_column(String(500))
+    owner_name: Mapped[str | None] = mapped_column(String(120))
+    address: Mapped[str | None] = mapped_column(Text)
+    gstin: Mapped[str | None] = mapped_column(String(30))
+    invoice_prefix: Mapped[str] = mapped_column(String(20), default="INV")
+    warranty_text: Mapped[str | None] = mapped_column(Text)
     industry: Mapped[str | None] = mapped_column(String(100))
     timezone: Mapped[str] = mapped_column(String(50), default="Asia/Kolkata")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
