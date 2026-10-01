@@ -33,6 +33,11 @@ class BusinessResponse(BaseModel):
     phone: str | None
     industry: str | None
     timezone: str
+    owner_name: str | None = None
+    address: str | None = None
+    gstin: str | None = None
+    invoice_prefix: str = "INV"
+    warranty_text: str | None = None
 
 
 class AuthResponse(BaseModel):
