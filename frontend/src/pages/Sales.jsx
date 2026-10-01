@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { api } from "../services/api";
 
 export default function Sales({ onBack }) {
+  const needsReference = method => method !== "cash";
+  const referencePlaceholder = method => method === "upi" ? "UTR / UPI Reference" : method === "cheque" ? "Cheque No." : method === "bank_transfer" ? "Transaction Reference" : method === "card" ? "Card Reference (optional)" : "Reference (optional)";
   const [sales, setSales] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [form, setForm] = useState({ customer_id: "", amount: "", notes: "" });
@@ -111,7 +113,7 @@ export default function Sales({ onBack }) {
                 <select value={p.payment_method} onChange={e => setSalePaymentsForm(rows => rows.map((r,i) => i === index ? {...r, payment_method:e.target.value} : r))}>
                   <option value="upi">UPI</option><option value="cash">Cash</option><option value="cheque">Cheque</option><option value="card">Card</option><option value="bank_transfer">Bank Transfer</option><option value="other">Other</option>
                 </select>
-                <input placeholder="UTR / Cheque No. / Reference" value={p.reference} onChange={e => setSalePaymentsForm(rows => rows.map((r,i) => i === index ? {...r, reference:e.target.value} : r))} />
+                {needsReference(p.payment_method) && <input placeholder={referencePlaceholder(p.payment_method)} value={p.reference} onChange={e => setSalePaymentsForm(rows => rows.map((r,i) => i === index ? {...r, reference:e.target.value} : r))} />}
                 {salePaymentsForm.length > 1 && <button type="button" className="small danger" onClick={() => setSalePaymentsForm(rows => rows.filter((_,i) => i !== index))}>Remove</button>}
               </div>)}
               <button type="button" className="small" onClick={() => setSalePaymentsForm(rows => [...rows, {amount:"", payment_method:"upi", reference:""}])}>+ Add Payment Method</button>
@@ -138,7 +140,7 @@ export default function Sales({ onBack }) {
                     <tr><td colSpan="6"><div className="sale-payment-details">
                       <div className="payment-breakup"><strong>Payment Break-up</strong>{Object.keys(byMethod).length ? Object.entries(byMethod).map(([method, amount]) => <span key={method}>{method.replace("_"," ").toUpperCase()}: ₹{amount.toFixed(2)}</span>) : <span>No payments yet</span>}</div>
                       {history.length > 0 && <div className="payment-history"><small>Payment History</small>{history.map(p => <div className="payment-history-row" key={p.id}><div><strong>{p.payment_method ? p.payment_method.replace("_"," ").toUpperCase() : "OTHER"}</strong><span>{new Date(p.payment_date).toLocaleDateString("en-IN")}{p.reference ? " · " + p.reference : ""}</span></div><strong>₹{Number(p.amount).toFixed(2)}</strong></div>)}</div>}
-                      {Number(s.balance_amount) > 0 && <div className="payment-entry"><input type="number" min="0.01" max={Number(s.balance_amount)} step="0.01" placeholder="Payment Amount" value={paymentForm.amount} onChange={e => setPaymentForm({ ...paymentForm, amount: e.target.value })}/><select value={paymentForm.payment_method} onChange={e => setPaymentForm({ ...paymentForm, payment_method: e.target.value })}><option value="upi">UPI</option><option value="cash">Cash</option><option value="cheque">Cheque</option><option value="card">Card</option><option value="bank_transfer">Bank Transfer</option><option value="other">Other</option></select><input placeholder="UTR / Cheque No. / Reference (optional)" value={paymentForm.reference} onChange={e => setPaymentForm({ ...paymentForm, reference: e.target.value })}/><button type="button" className="small" disabled={paymentId === s.id} onClick={() => addPayment(s)}>{paymentId === s.id ? "Saving..." : "Save Payment"}</button></div>}
+                      {Number(s.balance_amount) > 0 && <div className="payment-entry"><input type="number" min="0.01" max={Number(s.balance_amount)} step="0.01" placeholder="Payment Amount" value={paymentForm.amount} onChange={e => setPaymentForm({ ...paymentForm, amount: e.target.value })}/><select value={paymentForm.payment_method} onChange={e => setPaymentForm({ ...paymentForm, payment_method: e.target.value })}><option value="upi">UPI</option><option value="cash">Cash</option><option value="cheque">Cheque</option><option value="card">Card</option><option value="bank_transfer">Bank Transfer</option><option value="other">Other</option></select>{needsReference(paymentForm.payment_method) && <input placeholder={referencePlaceholder(paymentForm.payment_method)} value={paymentForm.reference} onChange={e => setPaymentForm({ ...paymentForm, reference: e.target.value })}/>}<button type="button" className="small" disabled={paymentId === s.id} onClick={() => addPayment(s)}>{paymentId === s.id ? "Saving..." : "Save Payment"}</button></div>}
                     </div></td></tr>
                   </React.Fragment>;
                 }) : <tr><td colSpan="6" className="table-state">No sales found.</td></tr>}
