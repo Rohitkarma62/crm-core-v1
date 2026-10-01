@@ -16,6 +16,15 @@ class CustomerUpdate(BaseModel):
     company: str | None = None
     address: str | None = None
 
+class CustomerPayment(BaseModel):
+    id: int
+    sale_id: int
+    amount: float
+    payment_method: str | None
+    payment_date: datetime
+    status: str
+    reference: str | None
+
 class CustomerResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
