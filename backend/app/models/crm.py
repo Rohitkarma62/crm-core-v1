@@ -170,3 +170,42 @@ class WorkshopExpense(Base):
     payment_method: Mapped[str | None] = mapped_column(String(30))
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class WorkshopMaterial(Base):
+    __tablename__ = "workshop_materials"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(150))
+    unit: Mapped[str] = mapped_column(String(30), default="pcs")
+    stock_qty: Mapped[Decimal] = mapped_column(Numeric(12, 3), default=0)
+    min_stock_qty: Mapped[Decimal] = mapped_column(Numeric(12, 3), default=0)
+    rate: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0)
+    supplier: Mapped[str | None] = mapped_column(String(150))
+    notes: Mapped[str | None] = mapped_column(Text)
+    active: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+class WorkshopMaterialTxn(Base):
+    __tablename__ = "workshop_material_txns"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id", ondelete="CASCADE"), index=True)
+    material_id: Mapped[int] = mapped_column(ForeignKey("workshop_materials.id", ondelete="CASCADE"), index=True)
+    work_order_id: Mapped[int | None] = mapped_column(ForeignKey("fabrication_orders.id", ondelete="SET NULL"), index=True)
+    txn_type: Mapped[str] = mapped_column(String(20))
+    qty: Mapped[Decimal] = mapped_column(Numeric(12, 3))
+    rate: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0)
+    txn_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    notes: Mapped[str | None] = mapped_column(Text)
+
+class WorkshopPayment(Base):
+    __tablename__ = "workshop_payments"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id", ondelete="CASCADE"), index=True)
+    work_order_id: Mapped[int] = mapped_column(ForeignKey("fabrication_orders.id", ondelete="CASCADE"), index=True)
+    customer_id: Mapped[int | None] = mapped_column(ForeignKey("customers.id", ondelete="SET NULL"), index=True)
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
+    payment_method: Mapped[str] = mapped_column(String(30), default="Cash")
+    reference: Mapped[str | None] = mapped_column(String(120))
+    payment_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    notes: Mapped[str | None] = mapped_column(Text)
