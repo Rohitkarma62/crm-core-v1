@@ -3,7 +3,7 @@ import { api, logout, clearCompanyCrmData } from "../services/api";
 
 const money = v => `₹${Number(v || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
-export default function Dashboard({ onLogout, onLeads, onCustomers, onFabrication, onSettings }) {
+export default function Dashboard({ onLogout, onEnquiries, onPipeline, onQuotations, onCustomers, onFabrication, onSettings }) {
   const [user] = useState(()=>{try{return JSON.parse(localStorage.getItem("crm_user")||"{}")}catch{return{}}});
   const [business] = useState(()=>{try{return JSON.parse(localStorage.getItem("crm_business")||"{}")}catch{return{}}});
   const [orders,setOrders]=useState([]);
@@ -42,7 +42,7 @@ export default function Dashboard({ onLogout, onLeads, onCustomers, onFabricatio
     orderValue:orders.reduce((a,o)=>a+Number(o.amount||0),0)
   }),[leads,customers,orders]);
 
-  const stageCounts=useMemo(()=>["New Enquiry","Measurement","Material Pending","Fabrication","Welding","Grinding","Painting","Ready","Delivered"].map(stage=>({stage,count:orders.filter(o=>o.stage===stage).length})),[orders]);
+  const stageCounts=useMemo(()=>["New Enquiry","Measurement","Quotation","Material Pending","Fabrication","Welding","Grinding","Painting","Ready","Delivered"].map(stage=>({stage,count:orders.filter(o=>o.stage===stage).length})),[orders]);
 
   function exit(){logout();onLogout();}
 
@@ -54,10 +54,12 @@ export default function Dashboard({ onLogout, onLeads, onCustomers, onFabricatio
 
     <section className="welcome">
       <div className="row">
-        <div><h1>Workshop Dashboard</h1><p>Enquiry → Measurement → Fabrication → Ready → Delivered</p></div>
+        <div><h1>Workshop Dashboard</h1><p>Enquiry → Measurement → Quotation → Work Order → Production → Delivery → Payment</p></div>
         <div className="dashboard-actions">
+          <button onClick={onEnquiries}>📋 Enquiries</button>
+          <button onClick={onPipeline}>🔄 Pipeline</button>
+          <button className="fabrication-nav" onClick={onQuotations}>📝 Quotations</button>
           <button className="fabrication-nav" onClick={onFabrication}>🏭 Work Orders</button>
-          <button onClick={onLeads}>📋 Enquiries</button>
           <button onClick={onCustomers}>👥 Customers</button>
           <button onClick={onSettings}>⚙️ Company / Bill</button>
           <button onClick={load}>↻ Refresh</button>
@@ -102,8 +104,9 @@ export default function Dashboard({ onLogout, onLeads, onCustomers, onFabricatio
         <div className="dashboard-panel">
           <div className="panel-title"><h2>Workshop Shortcuts</h2></div>
           <div className="dashboard-actions shortcut-actions">
+            <button onClick={onEnquiries}>+ New Enquiry</button>
+            <button onClick={onQuotations}>+ Quotation</button>
             <button onClick={onFabrication}>+ New Work Order</button>
-            <button onClick={onLeads}>+ New Enquiry</button>
             <button onClick={onCustomers}>+ Customer</button>
           </div>
         </div>
