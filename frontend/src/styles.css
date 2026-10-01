@@ -106,3 +106,10 @@
 .page>.card>button:not(.secondary),.page>.card .button-row button{background:#111827;color:#fff;border:0;border-radius:9px;padding:11px 16px;font-weight:700;cursor:pointer}
 .page>.card button:disabled{opacity:.6;cursor:wait}
 @media(max-width:700px){.page>.card{padding:16px;border-radius:14px}}
+
+/* Consistent action buttons */
+.search-actions button,.toolbar>button,.pipeline-head-actions button,.page-head button:not(.secondary){border:0;border-radius:9px;padding:11px 16px;background:#111827;color:#fff;font:inherit;font-weight:700;cursor:pointer}
+.search-actions button:disabled,.toolbar>button:disabled,.pipeline-head-actions button:disabled{opacity:.6;cursor:wait}
+@media(max-width:700px){
+ .search-actions button{min-width:92px}
+}
