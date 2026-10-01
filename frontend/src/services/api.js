@@ -12,7 +12,9 @@ api.interceptors.request.use((config) => {
 });
 
 export async function register(data) {
-  const { data: result } = await api.post("/api/v1/auth/register", data);
+  const body = new FormData();
+  Object.entries(data).forEach(([key, value]) => { if (value !== undefined && value !== null) body.append(key, value); });
+  const { data: result } = await api.post("/api/v1/auth/register", body, { headers: { "Content-Type": "multipart/form-data" } });
   localStorage.setItem("crm_access_token", result.access_token);
   localStorage.setItem("crm_user", JSON.stringify(result.user));
   localStorage.setItem("crm_business", JSON.stringify(result.business));
