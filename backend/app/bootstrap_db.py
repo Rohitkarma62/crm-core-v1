@@ -17,7 +17,6 @@ def sqlite_path(url: str) -> Path | None:
 
 def main() -> None:
     target = sqlite_path(settings.database_url)
-    Base.metadata.create_all(bind=engine)
     legacy = sqlite_path(os.getenv("DATABASE_URL", ""))
     if not target or not legacy or target.resolve() == legacy.resolve():
         return
@@ -29,6 +28,9 @@ def main() -> None:
     if not target.exists() and legacy.exists():
         shutil.copy2(legacy, target)
         print(f"Copied legacy SQLite database to persistent path: {target}")
+
+    # Create any newly added tables without disturbing existing business data.
+    Base.metadata.create_all(bind=engine)
 
 
 if __name__ == "__main__":
