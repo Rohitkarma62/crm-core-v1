@@ -5,6 +5,8 @@ import ResetPassword from "./pages/ResetPassword";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Leads from "./pages/Leads";
+import Pipeline from "./pages/FabricationPipeline";
+import Quotations from "./pages/Quotations";
 import Customers from "./pages/Customers";
 import CustomerProfile from "./pages/CustomerProfile";
 import Fabrication from "./pages/Fabrication";
@@ -13,15 +15,8 @@ import "./styles.css";
 
 class ErrorBoundary extends Component {
   state = { error: null };
-
-  static getDerivedStateFromError(error) {
-    return { error };
-  }
-
-  componentDidCatch(error) {
-    console.error("CRM startup error:", error);
-  }
-
+  static getDerivedStateFromError(error) { return { error }; }
+  componentDidCatch(error) { console.error("CRM startup error:", error); }
   render() {
     if (!this.state.error) return this.props.children;
     return (
@@ -30,14 +25,7 @@ class ErrorBoundary extends Component {
           <h1>CRM Core</h1>
           <p>Application startup error. Your saved browser session may be corrupted.</p>
           <div className="error">{this.state.error?.message || "Unknown frontend error"}</div>
-          <button
-            onClick={() => {
-              localStorage.removeItem("crm_access_token");
-              localStorage.removeItem("crm_user");
-              localStorage.removeItem("crm_business");
-              window.location.reload();
-            }}
-          >
+          <button onClick={() => { localStorage.removeItem("crm_access_token"); localStorage.removeItem("crm_user"); localStorage.removeItem("crm_business"); window.location.reload(); }}>
             Reset session and reload
           </button>
         </section>
@@ -54,14 +42,18 @@ function App() {
   const resetToken = new URLSearchParams(window.location.search).get("reset_token");
 
   if (auth) {
-    return page === "leads" ? <Leads onBack={() => setPage("dashboard")} />
+    return page === "enquiries" ? <Leads onBack={() => setPage("dashboard")} />
+      : page === "pipeline" ? <Pipeline onBack={() => setPage("dashboard")} onEnquiries={() => setPage("enquiries")} />
+      : page === "quotations" ? <Quotations onBack={() => setPage("dashboard")} onWorkOrders={() => setPage("fabrication")} />
       : page === "customers" ? <Customers onBack={() => setPage("dashboard")} onProfile={(id) => { setSelectedCustomer(id); setPage("customer-profile"); }} />
       : page === "customer-profile" ? <CustomerProfile customerId={selectedCustomer} onBack={() => setPage("customers")} />
-      : page === "fabrication" ? <Fabrication onBack={() => setPage("dashboard")} />
+      : page === "fabrication" ? <Fabrication onBack={() => setPage("dashboard")} onPipeline={() => setPage("pipeline")} />
       : page === "settings" ? <CompanySettings onBack={() => setPage("dashboard")} />
       : <Dashboard
           onLogout={() => { localStorage.clear(); setAuth(false); }}
-          onLeads={() => setPage("leads")}
+          onEnquiries={() => setPage("enquiries")}
+          onPipeline={() => setPage("pipeline")}
+          onQuotations={() => setPage("quotations")}
           onCustomers={() => setPage("customers")}
           onFabrication={() => setPage("fabrication")}
           onSettings={() => setPage("settings")}
