@@ -53,7 +53,7 @@ function App() {
 
   if (auth) {
     return page === "leads" ? <Leads onBack={() => setPage("dashboard")} />
-      : page === "pipeline" ? <Pipeline onBack={() => setPage("dashboard")} />
+      : page === "pipeline" ? <Pipeline onBack={() => setPage("dashboard")} onLeads={() => setPage("leads")} />
       : page === "customers" ? <Customers onBack={() => setPage("dashboard")} />
       : page === "sales" ? <Sales onBack={() => setPage("dashboard")} />
       : page === "import" ? <ImportExport onBack={() => setPage("dashboard")} />
