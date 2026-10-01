@@ -8,7 +8,6 @@ const emptyOrder = { customer:"", phone:"", site:"", work:"", measurement:"", am
 
 export default function Fabrication({ onBack }) {
   const [leads,setLeads]=useState([]);
-  const [sales,setSales]=useState([]);
   const [orders,setOrders]=useState([]);
   const [form,setForm]=useState(emptyOrder);
   const [stageFilter,setStageFilter]=useState("All");
@@ -19,10 +18,9 @@ export default function Fabrication({ onBack }) {
     try{
       const [l,s,o]=await Promise.all([
         api.get("/api/v1/leads"),
-        api.get("/api/v1/sales"),
         api.get("/api/v1/fabrication")
       ]);
-      setLeads(l.data.items||[]); setSales(s.data.items||[]); setOrders(o.data.items||[]);
+      setLeads(l.data.items||[]); setOrders(s.data.items||[]);
     }catch(e){setError(e.response?.data?.detail||"Workshop data load nahi ho saka.");}
   }
   useEffect(()=>{load()},[]);
@@ -32,7 +30,6 @@ export default function Fabrication({ onBack }) {
     orders:orders.length,
     production:orders.filter(o=>!["New Enquiry","Ready","Delivered"].includes(o.stage)).length,
     ready:orders.filter(o=>o.stage==="Ready").length,
-    sales:sales.reduce((a,s)=>a+Number(s.amount||0),0)
   }),[leads,orders,sales]);
 
   async function addOrder(e){
@@ -72,7 +69,7 @@ export default function Fabrication({ onBack }) {
       <div><span>Work Orders</span><strong>{stats.orders}</strong></div>
       <div><span>In Production</span><strong>{stats.production}</strong></div>
       <div><span>Ready</span><strong>{stats.ready}</strong></div>
-      <div><span>Total Sales</span><strong>{money(stats.sales)}</strong></div>
+      <div><span>Order Value</span><strong>{money(orders.reduce((a,o)=>a+Number(o.amount||0),0))}</strong></div>
     </section>
 
     <section className="panel">
