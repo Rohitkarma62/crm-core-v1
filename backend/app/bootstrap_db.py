@@ -3,6 +3,8 @@ import shutil
 from pathlib import Path
 
 from app.config import settings
+from app.database import Base, engine
+from app import models
 
 
 def sqlite_path(url: str) -> Path | None:
@@ -15,6 +17,7 @@ def sqlite_path(url: str) -> Path | None:
 
 def main() -> None:
     target = sqlite_path(settings.database_url)
+    Base.metadata.create_all(bind=engine)
     legacy = sqlite_path(os.getenv("DATABASE_URL", ""))
     if not target or not legacy or target.resolve() == legacy.resolve():
         return
