@@ -77,11 +77,12 @@ def payment_report(
     start, end = parse_dates(start_date, end_date)
     filters = [Payment.business_id == user.business_id, *date_filter(Payment.payment_date, start, end)]
     rows = db.query(Payment).filter(*filters).order_by(Payment.payment_date.desc()).all()
+    completed_rows = [p for p in rows if p.status == "completed"]
     methods = {}; statuses = {}
     for p in rows:
-        method = p.payment_method or "Other"; methods[method] = methods.get(method, 0) + money(p.amount)
+        method = p.payment_method or "Other"; methods[method] = methods.get(method, 0) + money(p.amount) if p.status == "completed" else methods.get(method, 0)
         st = p.status or "unknown"; statuses[st] = statuses.get(st, 0) + money(p.amount)
-    return {"total_payments":len(rows),"total_amount":round(sum(money(p.amount) for p in rows),2),"by_method":[{"name":k,"amount":round(v,2)} for k,v in sorted(methods.items(), key=lambda x:x[1], reverse=True)],"by_status":[{"name":k,"amount":round(v,2)} for k,v in statuses.items()]}
+    return {"total_payments":len(completed_rows),"total_amount":round(sum(money(p.amount) for p in completed_rows),2),"by_method":[{"name":k,"amount":round(v,2)} for k,v in sorted(methods.items(), key=lambda x:x[1], reverse=True) if v > 0],"by_status":[{"name":k,"amount":round(v,2)} for k,v in statuses.items()]}
 
 @router.get("/staff")
 def staff_report(
