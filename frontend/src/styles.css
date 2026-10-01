@@ -121,3 +121,6 @@
  .pipeline-head-actions{display:grid;grid-template-columns:1fr 1fr}
  .pipeline-head-actions button{width:100%;min-height:46px}
 }
+
+
+.payment-breakup{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0;font-size:13px}.payment-breakup span{padding:5px 9px;border:1px solid #e5e7eb;border-radius:8px;background:#f8fafc}.payment-entry{display:grid;grid-template-columns:1fr 1fr 1.5fr auto;gap:8px;margin-top:8px}.payment-entry input,.payment-entry select{min-width:0}@media(max-width:700px){.payment-entry{grid-template-columns:1fr 1fr}.payment-entry input:last-of-type{grid-column:1/-1}.payment-entry button{grid-column:1/-1}}
