@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { api } from "../services/api";
+import { api, clearCompanyCrmData } from "../services/api";
 
 export default function Pipeline({ onBack, onLeads }) {
   const [pipeline, setPipeline] = useState({ columns: [] });
@@ -51,6 +51,15 @@ export default function Pipeline({ onBack, onLeads }) {
     if (dragged) move(dragged, stageId);
   }
 
+  async function clearAllData() {
+    if (!window.confirm("WARNING: This will permanently delete ALL CRM data for this company. Continue?")) return;
+    const phrase = window.prompt("Type DELETE to permanently clear all CRM data:");
+    if (phrase !== "DELETE") return;
+    setError("");
+    try { await clearCompanyCrmData(); await load(); }
+    catch (e) { setError(e.response?.data?.detail || "Unable to clear CRM data"); }
+  }
+
   return (
     <main className="page pipeline-page">
       <div className="page-head pipeline-head">
@@ -60,6 +69,7 @@ export default function Pipeline({ onBack, onLeads }) {
           <p className="form-help">Move leads through each stage of your sales process.</p>
         </div>
         <div className="pipeline-head-actions">
+          <button className="danger-button page-cleanup-btn" onClick={clearAllData}>🗑 Clean Data</button>
           <button className="secondary pipeline-refresh-btn" onClick={load} disabled={loading}>↻ Refresh</button>
           <button className="primary pipeline-add-lead-btn" onClick={onLeads}>+ Add Lead</button>
         </div>
