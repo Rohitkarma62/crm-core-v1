@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { api } from "../services/api";
 
-export default function Pipeline({ onBack }) {
+export default function Pipeline({ onBack, onLeads }) {
   const [pipeline, setPipeline] = useState({ columns: [] });
   const [loading, setLoading] = useState(true);
   const [moving, setMoving] = useState(null);
@@ -61,7 +61,7 @@ export default function Pipeline({ onBack }) {
         </div>
         <div className="pipeline-head-actions">
           <button className="secondary" onClick={load} disabled={loading}>↻ Refresh</button>
-          <button onClick={() => window.location.hash = "#leads"}>+ Add Lead</button>
+          <button onClick={onLeads}>+ Add Lead</button>
         </div>
       </div>
 
