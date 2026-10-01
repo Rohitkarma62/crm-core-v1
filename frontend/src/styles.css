@@ -45,3 +45,20 @@
   .toolbar{align-items:stretch;flex-direction:column;gap:12px}
   .toolbar .search-input{max-width:none}
 }
+
+/* Consistent responsive forms */
+.form-grid.sales-form,.form-grid.lead-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 18px}
+.form-grid.sales-form label,.form-grid.lead-form label{display:flex;flex-direction:column;gap:7px;min-width:0;font-weight:600;font-size:14px}
+.form-grid.sales-form label span,.form-grid.lead-form label span{display:block}
+.form-grid.sales-form input,.form-grid.sales-form select,.form-grid.lead-form input,.form-grid.lead-form select,.form-grid.lead-form textarea{width:100%;min-width:0;height:44px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;font:inherit}
+.form-grid.lead-form textarea{height:100px;resize:vertical}
+.form-grid.sales-form .full-field,.form-grid.lead-form .full-field{grid-column:1/-1}
+.form-help{margin:6px 0 20px;color:#6b7280;font-size:14px}
+.search-actions{display:flex;gap:8px;align-items:center}
+.search-actions button{white-space:nowrap}
+@media(max-width:700px){
+ .form-grid.sales-form,.form-grid.lead-form{grid-template-columns:1fr}
+ .form-grid.sales-form .full-field,.form-grid.lead-form .full-field{grid-column:auto}
+ .search-actions{width:100%}
+ .search-actions .search-input{flex:1}
+}
