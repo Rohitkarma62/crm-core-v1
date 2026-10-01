@@ -14,6 +14,7 @@ from .routers.imports import router as imports_router
 from .routers.reports import router as reports_router
 from .routers.billing import router as billing_router
 from .routers.fabrication import router as fabrication_router
+from .routers.workshop_finance import router as workshop_finance_router
 
 app = FastAPI(title=settings.app_name, version="1.0.0")
 
@@ -36,6 +37,7 @@ app.include_router(imports_router)
 app.include_router(reports_router)
 app.include_router(billing_router)
 app.include_router(fabrication_router)
+app.include_router(workshop_finance_router)
 
 
 @app.get("/health", tags=["System"])
