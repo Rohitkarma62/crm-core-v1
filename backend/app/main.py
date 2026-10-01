@@ -13,6 +13,7 @@ from .routers.dashboard import router as dashboard_router
 from .routers.imports import router as imports_router
 from .routers.reports import router as reports_router
 from .routers.billing import router as billing_router
+from .routers.fabrication import router as fabrication_router
 
 app = FastAPI(title=settings.app_name, version="1.0.0")
 
@@ -34,6 +35,7 @@ app.include_router(dashboard_router)
 app.include_router(imports_router)
 app.include_router(reports_router)
 app.include_router(billing_router)
+app.include_router(fabrication_router)
 
 
 @app.get("/health", tags=["System"])
