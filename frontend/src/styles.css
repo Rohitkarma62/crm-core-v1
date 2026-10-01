@@ -163,3 +163,33 @@
  .initial-payment-row .small{grid-column:1/-1}
  .sale-payment-toggle{align-items:flex-start;flex-direction:column}
 }
+.sales-mobile-list{display:none}
+.sale-payment-details{padding:12px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px}
+.sale-status{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700;text-transform:capitalize;background:#eef2f7;color:#334155}
+.sale-status.paid{background:#dcfce7;color:#166534}
+.sale-status.partial{background:#fef3c7;color:#92400e}
+.sale-status.pending{background:#fee2e2;color:#991b1b}
+.payment-history-row{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid #e5e7eb}
+.payment-history-row:last-child{border-bottom:0}
+.payment-history-row>div{min-width:0;display:flex;flex-direction:column;gap:3px}
+.payment-history-row span{color:#64748b;font-size:12px;overflow-wrap:anywhere}
+.payment-history-row>strong{white-space:nowrap}
+@media(max-width:700px){
+ .sales-desktop-table{display:none!important}
+ .sales-mobile-list{display:flex;flex-direction:column;gap:12px}
+ .sale-mobile-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;box-shadow:0 2px 10px #00000008}
+ .sale-mobile-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding-bottom:12px;border-bottom:1px solid #eef2f7}
+ .sale-mobile-head>div{min-width:0;display:flex;flex-direction:column;gap:4px}
+ .sale-mobile-head strong{font-size:16px;overflow-wrap:anywhere}
+ .sale-mobile-head small{color:#64748b;font-size:12px}
+ .sale-mobile-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:12px 0}
+ .sale-mobile-stats div{background:#f8fafc;border-radius:9px;padding:9px;min-width:0}
+ .sale-mobile-stats small{display:block;color:#64748b;font-size:11px;margin-bottom:4px}
+ .sale-mobile-stats strong{display:block;font-size:13px;overflow-wrap:anywhere}
+ .sale-mobile-card .payment-breakup{padding:10px 0}
+ .sale-mobile-card .payment-history{margin-top:8px}
+ .sale-mobile-card .payment-entry{grid-template-columns:1fr 1fr;margin-top:12px}
+ .sale-mobile-card .payment-entry input:last-of-type{grid-column:1/-1}
+ .sale-mobile-card .payment-entry button{grid-column:1/-1;width:100%}
+ .sale-payment-details{padding:10px}
+}
