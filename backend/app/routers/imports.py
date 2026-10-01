@@ -16,7 +16,7 @@ MAX_ROWS = 10000
 FIELD_ALIASES = {
     "name": {"name", "full name", "client name", "customer name", "lead name"},
     "phone": {"phone", "mobile", "mobile number", "phone number", "contact"},
-    "email": {"email", "e-mail", "email address"},
+    "email": {"email", "e-mail", "email address", "e mail"},
     "company": {"company", "business", "company name"},
     "source": {"source", "lead source"},
     "status": {"status", "lead status"},
