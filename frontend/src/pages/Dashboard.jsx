@@ -5,8 +5,7 @@ const money = (value) => `₹${Number(value || 0).toLocaleString("en-IN", { maxi
 const dateTime = (value) => new Date(value).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
 
 export default function Dashboard({ onLogout, onLeads, onPipeline, onCustomers, onSales, onImport, onReports }) {
-  const user = JSON.parse(localStorage.getItem("crm_user") || "{}");
-  const business = JSON.parse(localStorage.getItem("crm_business") || "{}");
+  const safeJson = (key) => { try { return JSON.parse(localStorage.getItem(key) || "{}"); } catch { return {}; } };\n  const user = safeJson("crm_user");\n  const business = safeJson("crm_business");
   const [summary, setSummary] = useState(null);
   const [sources, setSources] = useState([]);
   const [recentLeads, setRecentLeads] = useState([]);
