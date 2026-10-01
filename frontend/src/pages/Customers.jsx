@@ -155,6 +155,7 @@ export default function Customers({ onBack, onProfile }) {
                     <td>{money(c.collected)}</td>
                     <td>{money(c.outstanding)}</td>
                     <td className="actions-cell">
+                      <button className="small" onClick={() => onProfile && onProfile(c.id)}>Profile / Bill</button>
                       <button className="small" onClick={() => edit(c)}>Edit</button>
                       <button className="small danger" onClick={() => remove(c.id)}>Delete</button>
                     </td>
