@@ -7,6 +7,7 @@ from ..database import get_db
 from ..dependencies import get_current_user
 from ..models.core import User
 from ..models.crm import Customer, Payment, Sale
+from ..models.billing import PaymentProof, Receipt, Invoice
 from ..schemas.sales import PaymentCreate, PaymentResponse, PaymentUpdate, SaleCreate, SaleListResponse, SaleResponse, SaleUpdate
 
 router = APIRouter(prefix="/api/v1", tags=["Sales & Payments"])
@@ -105,8 +106,37 @@ def update_sale(sale_id: int, payload: SaleUpdate, db: Session = Depends(get_db)
 @router.delete("/sales/{sale_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_sale(sale_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     sale = get_sale(sale_id, user, db)
-    db.query(Payment).filter(Payment.sale_id == sale.id).delete(synchronize_session=False)
-    db.delete(sale); db.commit()
+    payment_ids = list(db.scalars(select(Payment.id).where(
+        Payment.sale_id == sale.id,
+        Payment.business_id == user.business_id,
+    )).all())
+
+    if payment_ids:
+        db.query(PaymentProof).filter(
+            PaymentProof.payment_id.in_(payment_ids),
+            PaymentProof.business_id == user.business_id,
+        ).delete(synchronize_session=False)
+        db.query(Receipt).filter(
+            Receipt.payment_id.in_(payment_ids),
+            Receipt.business_id == user.business_id,
+        ).delete(synchronize_session=False)
+
+    db.query(Invoice).filter(
+        Invoice.sale_id == sale.id,
+        Invoice.business_id == user.business_id,
+    ).delete(synchronize_session=False)
+
+    db.query(Payment).filter(
+        Payment.sale_id == sale.id,
+        Payment.business_id == user.business_id,
+    ).delete(synchronize_session=False)
+
+    db.delete(sale)
+    try:
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(409, "Sale cannot be deleted because another record is linked to it") from exc
 
 
 @router.get("/payments", response_model=list[PaymentResponse])
