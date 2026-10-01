@@ -247,3 +247,5 @@
 .forgot-link{background:transparent!important;color:#2563eb!important;padding:8px!important;margin-top:6px!important}.reset-back{margin-top:8px!important;color:#111827!important;background:#fff!important;border:1px solid #cbd5e1!important}.reset-card{max-width:440px}.reset-card .success-message{margin:14px 0}
 
 .danger-zone{border:1px solid #fecaca;background:#fff7f7}.danger-zone h2{color:#b91c1c}.danger-button{background:#dc2626!important;color:#fff!important;border:0!important}.danger-button:disabled{opacity:.6;cursor:not-allowed}
+
+.danger-dashboard-button{background:#dc2626!important;color:#fff!important;border:0!important}.danger-dashboard-button:hover{background:#b91c1c!important}
