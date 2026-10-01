@@ -83,7 +83,28 @@ def update_customer(customer_id: int, payload: CustomerUpdate, db: Session = Dep
 @router.delete("/{customer_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_customer(customer_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     customer = get_customer_or_404(customer_id, user, db)
-    db.delete(customer); db.commit()
+
+    # Delete dependent financial records first. A customer may have many
+    # payments linked to sales, so deleting the parent directly can violate
+    # foreign-key constraints.
+    sales = db.scalars(select(Sale).where(
+        Sale.customer_id == customer.id,
+        Sale.business_id == user.business_id
+    )).all()
+    for sale in sales:
+        db.query(Payment).filter(
+            Payment.sale_id == sale.id,
+            Payment.business_id == user.business_id
+        ).delete(synchronize_session=False)
+    for sale in sales:
+        db.delete(sale)
+
+    db.delete(customer)
+    try:
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(409, "Customer cannot be deleted because another record is linked to this customer") from exc
 
 @router.post("/from-lead/{lead_id}", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
 def convert_lead_to_customer(lead_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
