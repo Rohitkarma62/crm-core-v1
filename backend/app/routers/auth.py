@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..dependencies import get_current_user
 from ..models.core import Business, Role, User
+from ..models.crm import LeadStatus
+from .pipeline import DEFAULT_STAGES
 from ..schemas.auth import AuthResponse, LoginRequest, RegisterRequest, UserResponse, BusinessResponse
 from ..utils.security import create_access_token, hash_password, verify_password
 
@@ -40,6 +42,8 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
         permissions={"all": True},
     )
     db.add(role)
+    for stage_name, color, sort_order, is_final in DEFAULT_STAGES:
+        db.add(LeadStatus(business_id=business.id, name=stage_name, color=color, sort_order=sort_order, is_final=is_final))
     db.flush()
 
     user = User(
