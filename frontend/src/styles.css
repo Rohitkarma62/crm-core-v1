@@ -97,3 +97,12 @@
  .pipeline-stage-tabs{margin-bottom:14px}
  .pipeline-card{cursor:default}
 }
+
+/* Unified page cards and controls */
+.page>.card{width:100%;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:22px;margin:0 0 20px;box-shadow:0 4px 18px #00000008}
+.page>.card h2{margin:0 0 10px;font-size:24px}
+.page>.card input,.page>.card select,.page>.card textarea{max-width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:10px 12px;font:inherit;background:#fff}
+.page>.card input:focus,.page>.card select:focus,.page>.card textarea:focus{outline:none;border-color:#64748b;box-shadow:0 0 0 3px #64748b18}
+.page>.card>button:not(.secondary),.page>.card .button-row button{background:#111827;color:#fff;border:0;border-radius:9px;padding:11px 16px;font-weight:700;cursor:pointer}
+.page>.card button:disabled{opacity:.6;cursor:wait}
+@media(max-width:700px){.page>.card{padding:16px;border-radius:14px}}
