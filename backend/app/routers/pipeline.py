@@ -33,7 +33,11 @@ def get_pipeline(db: Session = Depends(get_db), user: User = Depends(get_current
     stages = ensure_default_stages(db, user.business_id)
     leads = db.scalars(select(Lead).where(Lead.business_id == user.business_id).order_by(Lead.created_at.desc())).all()
     by_stage = {stage.id: [] for stage in stages}
+    default_stage_id = stages[0].id if stages else None
     for lead in leads:
+        if lead.status_id is None and default_stage_id is not None:
+            lead.status_id = default_stage_id
+            db.add(lead)
         if lead.status_id in by_stage:
             by_stage[lead.status_id].append(PipelineLeadResponse(
                 id=lead.id, name=lead.name, phone=lead.phone, company=lead.company,
@@ -41,6 +45,7 @@ def get_pipeline(db: Session = Depends(get_db), user: User = Depends(get_current
                 estimated_value=float(lead.estimated_value) if lead.estimated_value is not None else None,
                 status_id=lead.status_id, assigned_to=lead.assigned_to,
             ))
+    db.commit()
     return PipelineResponse(columns=[PipelineColumnResponse(
         stage=PipelineStageResponse.model_validate(stage), leads=by_stage[stage.id]
     ) for stage in stages])
