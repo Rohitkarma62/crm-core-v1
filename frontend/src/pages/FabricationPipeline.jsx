@@ -7,7 +7,7 @@ export default function FabricationPipeline({ onBack, onEnquiries }) {
   const [orders,setOrders]=useState([]);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState("");
-  const [dragged,setDragged]=useState(null);
+  const [dragged,setDragged]=useState(null);\n  const [activeStage,setActiveStage]=useState(stages[0]);
 
   async function load(){
     setLoading(true);setError("");
@@ -33,9 +33,9 @@ export default function FabricationPipeline({ onBack, onEnquiries }) {
     </div>
     {error&&<p className="error">{error}</p>}
     {loading?<section className="panel"><div className="table-state">Loading pipeline...</div></section>:<>
-      <section className="panel pipeline-stage-tabs"><div className="pipeline-tabs-scroll">{stages.map(s=><button key={s} className="stage-tab"><span>{s}</span><b>{counts[s]}</b></button>)}</div></section>
+      <section className="panel pipeline-stage-tabs"><div className="pipeline-tabs-scroll">{stages.map(s=><button key={s} className={`stage-tab ${activeStage===s?"active":""}`} onClick={()=>setActiveStage(s)}><span>{s}</span><b>{counts[s]}</b></button>)}</div></section>
       <section className="pipeline-board fabrication-pipeline-board">
-        {stages.map(stage=><section key={stage} className="pipeline-column" onDragOver={e=>e.preventDefault()} onDrop={()=>{if(dragged)move(dragged,stage)}}>
+        {stages.map(stage=><section key={stage} className={`pipeline-column ${activeStage===stage?"active-column":""}` onDragOver={e=>e.preventDefault()} onDrop={()=>{if(dragged)move(dragged,stage)}}>
           <header><div><strong>{stage}</strong></div><span className="count">{counts[stage]}</span></header>
           <div className="pipeline-cards">
             {orders.filter(o=>o.stage===stage).map(o=><article key={o.id} className="pipeline-card" draggable onDragStart={()=>setDragged(o.id)} onDragEnd={()=>setDragged(null)}>
