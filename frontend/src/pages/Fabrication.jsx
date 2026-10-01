@@ -9,7 +9,7 @@ const emptyOrder = { customer:"", phone:"", site:"", work:"", measurement:"", am
 export default function Fabrication({ onBack }) {
   const [leads,setLeads]=useState([]);
   const [sales,setSales]=useState([]);
-  const [orders,setOrders]=useState(()=>{try{return JSON.parse(localStorage.getItem("fabrication_orders")||"[]")}catch{return[]}});
+  const [orders,setOrders]=useState([]);
   const [form,setForm]=useState(emptyOrder);
   const [stageFilter,setStageFilter]=useState("All");
   const [saving,setSaving]=useState(false);
@@ -17,12 +17,15 @@ export default function Fabrication({ onBack }) {
 
   async function load(){
     try{
-      const [l,s]=await Promise.all([api.get("/api/v1/leads"),api.get("/api/v1/sales")]);
-      setLeads(l.data.items||[]); setSales(s.data.items||[]);
+      const [l,s,o]=await Promise.all([
+        api.get("/api/v1/leads"),
+        api.get("/api/v1/sales"),
+        api.get("/api/v1/fabrication")
+      ]);
+      setLeads(l.data.items||[]); setSales(s.data.items||[]); setOrders(o.data.items||[]);
     }catch(e){setError(e.response?.data?.detail||"Workshop data load nahi ho saka.");}
   }
   useEffect(()=>{load()},[]);
-  useEffect(()=>{localStorage.setItem("fabrication_orders",JSON.stringify(orders))},[orders]);
 
   const stats=useMemo(()=>({
     enquiries:leads.length,
@@ -32,14 +35,31 @@ export default function Fabrication({ onBack }) {
     sales:sales.reduce((a,s)=>a+Number(s.amount||0),0)
   }),[leads,orders,sales]);
 
-  function addOrder(e){
+  async function addOrder(e){
     e.preventDefault(); setSaving(true); setError("");
     if(!form.customer||!form.work){setError("Customer aur work requirement bharna zaroori hai.");setSaving(false);return}
-    const order={...form,id:Date.now(),stage:"New Enquiry",createdAt:new Date().toISOString()};
-    setOrders(v=>[order,...v]); setForm(emptyOrder); setSaving(false);
+    try{
+      const r=await api.post("/api/v1/fabrication",form);
+      setOrders(v=>[r.data,...v]); setForm(emptyOrder);
+    }catch(e){setError(e.response?.data?.detail||"Work order save nahi hua.");}
+    finally{setSaving(false);}
   }
-  function move(id,stage){setOrders(v=>v.map(o=>o.id===id?{...o,stage}:o))}
-  function remove(id){if(confirm("Is work order ko delete karein?"))setOrders(v=>v.filter(o=>o.id!==id))}
+
+  async function move(id,stage){
+    try{
+      const r=await api.put(`/api/v1/fabrication/${id}`,{stage});
+      setOrders(v=>v.map(o=>o.id===id?r.data:o));
+    }catch(e){setError(e.response?.data?.detail||"Stage update nahi hua.");}
+  }
+
+  async function remove(id){
+    if(!confirm("Is work order ko delete karein?"))return;
+    try{
+      await api.delete(`/api/v1/fabrication/${id}`);
+      setOrders(v=>v.filter(o=>o.id!==id));
+    }catch(e){setError(e.response?.data?.detail||"Work order delete nahi hua.");}
+  }
+
   const visible=stageFilter==="All"?orders:orders.filter(o=>o.stage===stageFilter);
 
   return <main className="page fabrication-page">
