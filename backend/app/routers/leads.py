@@ -53,6 +53,13 @@ def create_lead(payload: LeadCreate, db: Session = Depends(get_db), user: User =
     ensure_refs(payload, user, db)
     data = payload.model_dump()
     data["business_id"] = user.business_id
+    if data.get("status_id") is None:
+        default_stage = db.scalar(select(LeadStatus).where(LeadStatus.business_id == user.business_id).order_by(LeadStatus.sort_order, LeadStatus.id))
+        if default_stage is None:
+            default_stage = LeadStatus(business_id=user.business_id, name="New", color="#64748b", sort_order=10, is_final=False)
+            db.add(default_stage)
+            db.flush()
+        data["status_id"] = default_stage.id
     lead = Lead(**data)
     db.add(lead)
     db.commit()
