@@ -40,8 +40,10 @@ jobs:
         working-directory: frontend
         run: npm install @capacitor/core @capacitor/android @capacitor/cli && npm install -D typescript
 
-      - name: Build web app
+      - name: Build web app for Capacitor
         working-directory: frontend
+        env:
+          VITE_BASE_PATH: ./
         run: npm run build
 
       - name: Add Android platform
