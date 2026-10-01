@@ -146,3 +146,20 @@
   .sales-page .payment-history .metric-row strong{font-size:13px}
   .sales-page .payment-breakup>span{font-size:12px}
 }
+
+/* Initial payment capture on sale creation */
+.sale-payment-capture{border:1px solid #e5e7eb;border-radius:10px;padding:14px;background:#f8fafc}
+.sale-payment-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.sale-payment-toggle label{display:flex!important;flex-direction:row!important;align-items:center;gap:8px!important;font-weight:700!important}
+.sale-payment-toggle input{width:18px!important;height:18px!important}
+.sale-payment-toggle span{font-size:12px;color:#64748b;font-weight:400}
+.initial-payments{margin-top:12px;display:flex;flex-direction:column;gap:10px}
+.initial-payment-row{display:grid;grid-template-columns:1fr 1fr 1.5fr auto;gap:8px;align-items:center}
+.initial-payment-row input,.initial-payment-row select{height:42px!important;width:100%;min-width:0;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;font:inherit}
+.initial-payment-total{font-weight:700;color:#334155;font-size:13px;padding-top:3px}
+@media(max-width:700px){
+ .initial-payment-row{grid-template-columns:1fr 1fr}
+ .initial-payment-row input:nth-of-type(2){grid-column:1/-1}
+ .initial-payment-row .small{grid-column:1/-1}
+ .sale-payment-toggle{align-items:flex-start;flex-direction:column}
+}
