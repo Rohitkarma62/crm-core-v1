@@ -36,9 +36,9 @@ jobs:
         working-directory: frontend
         run: npm install
 
-      - name: Install Capacitor
+      - name: Install Capacitor and TypeScript
         working-directory: frontend
-        run: npm install @capacitor/core @capacitor/android @capacitor/cli
+        run: npm install @capacitor/core @capacitor/android @capacitor/cli && npm install -D typescript
 
       - name: Build web app
         working-directory: frontend
