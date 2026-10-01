@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { api } from "../services/api";
+import { api } from "../services/api";\n\nconst money = (v) => `₹${Number(v || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
 export default function Customers({ onBack }) {
   const [customers, setCustomers] = useState([]);
