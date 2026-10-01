@@ -13,6 +13,9 @@ import Fabrication from "./pages/Fabrication";
 import CompanySettings from "./pages/CompanySettings";
 import Employees from "./pages/Employees";
 import Expenses from "./pages/Expenses";
+import Materials from "./pages/Materials";
+import Payments from "./pages/Payments";
+import WorkshopReports from "./pages/WorkshopReports";
 import "./styles.css";
 
 class ErrorBoundary extends Component {
@@ -52,6 +55,9 @@ function App() {
       : page === "fabrication" ? <Fabrication onBack={() => setPage("dashboard")} onPipeline={() => setPage("pipeline")} />
       : page === "employees" ? <Employees onBack={() => setPage("dashboard")} />
       : page === "expenses" ? <Expenses onBack={() => setPage("dashboard")} />
+      : page === "materials" ? <Materials onBack={() => setPage("dashboard")} />
+      : page === "payments" ? <Payments onBack={() => setPage("dashboard")} />
+      : page === "reports" ? <WorkshopReports onBack={() => setPage("dashboard")} />
       : page === "settings" ? <CompanySettings onBack={() => setPage("dashboard")} />
       : <Dashboard
           onLogout={() => { localStorage.clear(); setAuth(false); }}
@@ -63,6 +69,9 @@ function App() {
           onSettings={() => setPage("settings")}
           onEmployees={() => setPage("employees")}
           onExpenses={() => setPage("expenses")}
+          onMaterials={() => setPage("materials")}
+          onPayments={() => setPage("payments")}
+          onReports={() => setPage("reports")}
         />;
   }
 
