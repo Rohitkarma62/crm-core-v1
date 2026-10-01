@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..dependencies import get_current_user
 from ..models.core import User
-from ..models.crm import Lead, LeadSource, LeadStatus
+from ..models.crm import Activity, Customer, FollowUp, Lead, LeadSource, LeadStatus, Sale
 from ..schemas.leads import LeadCreate, LeadListResponse, LeadResponse, LeadUpdate
 
 router = APIRouter(prefix="/api/v1/leads", tags=["Leads"])
@@ -102,6 +102,15 @@ def update_lead(lead_id: int, payload: LeadUpdate, db: Session = Depends(get_db)
 @router.delete("/{lead_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_lead(lead_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     lead = db.scalar(select(Lead).where(Lead.id == lead_id, Lead.business_id == user.business_id))
-    if not lead: raise HTTPException(404, "Lead not found")
+    if not lead:
+        raise HTTPException(404, "Lead not found")
+    db.query(FollowUp).filter(FollowUp.lead_id == lead_id, FollowUp.business_id == user.business_id).delete(synchronize_session=False)
+    db.query(Activity).filter(Activity.lead_id == lead_id, Activity.business_id == user.business_id).delete(synchronize_session=False)
+    db.query(Customer).filter(Customer.lead_id == lead_id, Customer.business_id == user.business_id).update({Customer.lead_id: None}, synchronize_session=False)
+    db.query(Sale).filter(Sale.lead_id == lead_id, Sale.business_id == user.business_id).update({Sale.lead_id: None}, synchronize_session=False)
     db.delete(lead)
-    db.commit()
+    try:
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(409, "Lead cannot be deleted because another record is linked to it") from exc
