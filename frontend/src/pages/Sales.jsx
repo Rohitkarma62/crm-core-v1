@@ -37,10 +37,23 @@ export default function Sales({ onBack }) {
     setError("");
     setSaving(true);
     try {
+      const initialPayments = salePaymentEnabled
+        ? salePaymentsForm.filter(p => Number(p.amount) > 0).map(p => ({ ...p, amount: Number(p.amount), reference: p.reference || null }))
+        : [];
+      const initialTotal = initialPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+      if (initialTotal > Number(form.amount)) {
+        setError("Initial payment total sale amount se zyada nahi ho sakta.");
+        return;
+      }
+      if (salePaymentEnabled && initialPayments.length === 0) {
+        setError("Payment received select kiya hai, payment amount enter karo.");
+        return;
+      }
       await api.post("/api/v1/sales", {
         ...form,
         customer_id: Number(form.customer_id),
         amount: Number(form.amount),
+        payments: initialPayments,
       });
       setForm({ customer_id: "", amount: "", notes: "" });
       setSalePaymentEnabled(false);
@@ -112,29 +125,39 @@ export default function Sales({ onBack }) {
 
       <section className="panel">
         <div className="toolbar"><div><h2>Sales</h2><span className="record-count">{loading ? "Loading..." : `${sales.length} sale${sales.length === 1 ? "" : "s"}`}</span></div></div>
-        <div className="table-wrap">
-          <table><thead><tr><th>Customer</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Status</th><th>Action</th></tr></thead>
+        <div className="sales-desktop-table table-wrap">
+          <table><thead><tr><th>Customer</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Status</th><th>Payment</th></tr></thead>
             <tbody>
               {loading ? <tr><td colSpan="6" className="table-state">Loading sales...</td></tr> :
                 sales.length ? sales.map(s => {
-                  const c = customers.find(x => x.id === s.customer_id);
+                  const customer = customers.find(x => x.id === s.customer_id);
                   const history = salePayments(s.id);
                   const byMethod = history.reduce((acc, p) => { const key = p.payment_method || "other"; acc[key] = (acc[key] || 0) + Number(p.amount); return acc; }, {});
                   return <React.Fragment key={s.id}>
-                    <tr><td><strong>{c?.name || `Customer #${s.customer_id}`}</strong></td><td>₹{Number(s.amount).toFixed(2)}</td><td>₹{Number(s.paid_amount).toFixed(2)}</td><td>₹{Number(s.balance_amount).toFixed(2)}</td><td>{s.status}</td><td></td></tr>
-                    <tr><td colSpan="6">
-                      <div className="payment-breakup"><strong>Payment Break-up</strong> {Object.keys(byMethod).length ? Object.entries(byMethod).map(([method, amount]) => <span key={method}>{method.replace("_", " ").toUpperCase()}: ₹{amount.toFixed(2)}</span>) : <span>No payments yet</span>}{history.length > 0 && <div className="payment-history"><small>Payment History</small>{history.map(p => <div className="metric-row" key={p.id}><span>{p.payment_method ? p.payment_method.replace("_", " ").toUpperCase() : "OTHER"} · {new Date(p.payment_date).toLocaleDateString("en-IN")}{p.reference ? " · " + p.reference : ""}</span><strong>₹{Number(p.amount).toFixed(2)}</strong></div>)}</div>}</div>
-                      {Number(s.balance_amount) > 0 && <div className="payment-entry">
-                        <input type="number" min="0.01" max={Number(s.balance_amount)} step="0.01" aria-label="Payment amount" placeholder="Payment Amount" value={paymentForm.amount} onChange={e => setPaymentForm({ ...paymentForm, amount: e.target.value })} />
-                        <select aria-label="Payment method" required value={paymentForm.payment_method} onChange={e => setPaymentForm({ ...paymentForm, payment_method: e.target.value })}><option value="upi">UPI</option><option value="cash">Cash</option><option value="cheque">Cheque</option><option value="card">Card</option><option value="bank_transfer">Bank Transfer</option><option value="other">Other</option></select>
-                        <input aria-label="Payment reference" placeholder="UTR / Cheque No. / Reference (optional)" value={paymentForm.reference} onChange={e => setPaymentForm({ ...paymentForm, reference: e.target.value })} />
-                        <button className="small" disabled={paymentId === s.id} onClick={() => addPayment(s)}>{paymentId === s.id ? "Saving..." : "Save Payment"}</button>
-                      </div>}
-                    </td></tr>
+                    <tr><td><strong>{customer?.name || `Customer #${s.customer_id}`}</strong></td><td>₹{Number(s.amount).toFixed(2)}</td><td>₹{Number(s.paid_amount).toFixed(2)}</td><td>₹{Number(s.balance_amount).toFixed(2)}</td><td><span className={`sale-status ${s.status}`}>{s.status}</span></td><td>{Number(s.balance_amount) > 0 ? "Pending" : "Paid"}</td></tr>
+                    <tr><td colSpan="6"><div className="sale-payment-details">
+                      <div className="payment-breakup"><strong>Payment Break-up</strong>{Object.keys(byMethod).length ? Object.entries(byMethod).map(([method, amount]) => <span key={method}>{method.replace("_"," ").toUpperCase()}: ₹{amount.toFixed(2)}</span>) : <span>No payments yet</span>}</div>
+                      {history.length > 0 && <div className="payment-history"><small>Payment History</small>{history.map(p => <div className="payment-history-row" key={p.id}><div><strong>{p.payment_method ? p.payment_method.replace("_"," ").toUpperCase() : "OTHER"}</strong><span>{new Date(p.payment_date).toLocaleDateString("en-IN")}{p.reference ? " · " + p.reference : ""}</span></div><strong>₹{Number(p.amount).toFixed(2)}</strong></div>)}</div>}
+                      {Number(s.balance_amount) > 0 && <div className="payment-entry"><input type="number" min="0.01" max={Number(s.balance_amount)} step="0.01" placeholder="Payment Amount" value={paymentForm.amount} onChange={e => setPaymentForm({ ...paymentForm, amount: e.target.value })}/><select value={paymentForm.payment_method} onChange={e => setPaymentForm({ ...paymentForm, payment_method: e.target.value })}><option value="upi">UPI</option><option value="cash">Cash</option><option value="cheque">Cheque</option><option value="card">Card</option><option value="bank_transfer">Bank Transfer</option><option value="other">Other</option></select><input placeholder="UTR / Cheque No. / Reference (optional)" value={paymentForm.reference} onChange={e => setPaymentForm({ ...paymentForm, reference: e.target.value })}/><button type="button" className="small" disabled={paymentId === s.id} onClick={() => addPayment(s)}>{paymentId === s.id ? "Saving..." : "Save Payment"}</button></div>}
+                    </div></td></tr>
                   </React.Fragment>;
                 }) : <tr><td colSpan="6" className="table-state">No sales found.</td></tr>}
             </tbody>
           </table>
+        </div>
+        <div className="sales-mobile-list">
+          {loading ? <div className="table-state">Loading sales...</div> : sales.length ? sales.map(s => {
+            const customer = customers.find(x => x.id === s.customer_id);
+            const history = salePayments(s.id);
+            const byMethod = history.reduce((acc, p) => { const key = p.payment_method || "other"; acc[key] = (acc[key] || 0) + Number(p.amount); return acc; }, {});
+            return <article className="sale-mobile-card" key={s.id}>
+              <div className="sale-mobile-head"><div><strong>{customer?.name || `Customer #${s.customer_id}`}</strong><small>{new Date(s.sale_date).toLocaleDateString("en-IN")}</small></div><span className={`sale-status ${s.status}`}>{s.status}</span></div>
+              <div className="sale-mobile-stats"><div><small>Sale</small><strong>₹{Number(s.amount).toFixed(2)}</strong></div><div><small>Paid</small><strong>₹{Number(s.paid_amount).toFixed(2)}</strong></div><div><small>Balance</small><strong>₹{Number(s.balance_amount).toFixed(2)}</strong></div></div>
+              <div className="payment-breakup"><strong>Payment Break-up</strong>{Object.keys(byMethod).length ? Object.entries(byMethod).map(([method, amount]) => <span key={method}>{method.replace("_"," ").toUpperCase()}: ₹{amount.toFixed(2)}</span>) : <span>No payments yet</span>}</div>
+              {history.length > 0 && <div className="payment-history"><small>Payment History</small>{history.map(p => <div className="payment-history-row" key={p.id}><div><strong>{p.payment_method ? p.payment_method.replace("_"," ").toUpperCase() : "OTHER"}</strong><span>{new Date(p.payment_date).toLocaleDateString("en-IN")}{p.reference ? " · " + p.reference : ""}</span></div><strong>₹{Number(p.amount).toFixed(2)}</strong></div>)}</div>}
+              {Number(s.balance_amount) > 0 && <div className="payment-entry"><input type="number" min="0.01" max={Number(s.balance_amount)} step="0.01" placeholder="Payment Amount" value={paymentForm.amount} onChange={e => setPaymentForm({ ...paymentForm, amount: e.target.value })}/><select value={paymentForm.payment_method} onChange={e => setPaymentForm({ ...paymentForm, payment_method: e.target.value })}><option value="upi">UPI</option><option value="cash">Cash</option><option value="cheque">Cheque</option><option value="card">Card</option><option value="bank_transfer">Bank Transfer</option><option value="other">Other</option></select><input placeholder="UTR / Cheque No. / Reference (optional)" value={paymentForm.reference} onChange={e => setPaymentForm({ ...paymentForm, reference: e.target.value })}/><button type="button" className="small" disabled={paymentId === s.id} onClick={() => addPayment(s)}>{paymentId === s.id ? "Saving..." : "Save Payment"}</button></div>}
+            </article>;
+          }) : <div className="table-state">No sales found.</div>}
         </div>
       </section>
     </main>
