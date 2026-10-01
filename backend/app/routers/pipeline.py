@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..dependencies import get_current_user
 from ..models.core import User
-from ..models.crm import Lead, LeadStatus, Activity
+from ..models.crm import Lead, LeadStatus, Activity, Customer
 from ..schemas.pipeline import PipelineResponse, PipelineColumnResponse, PipelineLeadResponse, PipelineStageResponse, MoveLeadRequest
 
 router = APIRouter(prefix="/api/v1/pipeline", tags=["Pipeline"])
@@ -35,6 +35,19 @@ def get_pipeline(db: Session = Depends(get_db), user: User = Depends(get_current
     by_stage = {stage.id: [] for stage in stages}
     default_stage_id = stages[0].id if stages else None
     for lead in leads:
+        if lead.status_id is not None:
+            stage = next((s for s in stages if s.id == lead.status_id), None)
+            if stage and stage.name.strip().lower() == "converted":
+                existing_customer = db.scalar(select(Customer).where(Customer.lead_id == lead.id, Customer.business_id == user.business_id))
+                if not existing_customer:
+                    db.add(Customer(
+                        business_id=user.business_id,
+                        lead_id=lead.id,
+                        name=lead.name,
+                        phone=lead.phone,
+                        email=lead.email,
+                        company=lead.company,
+                    ))
         if lead.status_id is None and default_stage_id is not None:
             lead.status_id = default_stage_id
             db.add(lead)
@@ -60,6 +73,17 @@ def move_lead(lead_id: int, payload: MoveLeadRequest, db: Session = Depends(get_
         raise HTTPException(400, "Invalid pipeline stage")
     old_stage = db.scalar(select(LeadStatus).where(LeadStatus.id == lead.status_id, LeadStatus.business_id == user.business_id)) if lead.status_id else None
     lead.status_id = target.id
+    if target.name.strip().lower() == "converted":
+        existing_customer = db.scalar(select(Customer).where(Customer.lead_id == lead.id, Customer.business_id == user.business_id))
+        if not existing_customer:
+            db.add(Customer(
+                business_id=user.business_id,
+                lead_id=lead.id,
+                name=lead.name,
+                phone=lead.phone,
+                email=lead.email,
+                company=lead.company,
+            ))
     db.add(Activity(
         business_id=user.business_id, lead_id=lead.id, user_id=user.id,
         type="STATUS_CHANGE", description=f"Stage changed from {old_stage.name if old_stage else 'Unassigned'} to {target.name}"
