@@ -185,8 +185,8 @@ export default function CustomerProfile({ customerId, onBack }) {
         <div className="invoice-footer">
           <div><p>धन्यवाद!</p><p>कृपया भुगतान रसीद/बिल सुरक्षित रखें।</p></div>
           <div className="invoice-signatures">
-            {assets.stamp && <img className="invoice-stamp" src={assets.stamp} alt="Company stamp" />}
-            {assets.signature && <img className="invoice-signature" src={assets.signature} alt="Owner signature" />}
+            {assets.stamp && <div className="invoice-signature-item"><img className="invoice-stamp" src={assets.stamp} alt="Company stamp" /></div>}
+            {assets.signature && <div className="invoice-signature-item"><img className="invoice-signature" src={assets.signature} alt="Owner signature" /></div>}
           </div>
         </div>
       </div>
