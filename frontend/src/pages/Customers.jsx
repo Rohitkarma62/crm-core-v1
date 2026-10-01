@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../services/api";\n\nconst money = (v) => `₹${Number(v || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
-export default function Customers({ onBack }) {
+export default function Customers({ onBack, onProfile }) {
   const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState("");
   const [form, setForm] = useState({ name: "", phone: "", email: "", company: "", address: "" });
