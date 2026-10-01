@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { api, logout } from "../services/api";
+import { api, logout, clearCompanyCrmData } from "../services/api";
 
 const money = (value) => `₹${Number(value || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 const dateTime = (value) => new Date(value).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
@@ -39,6 +39,20 @@ export default function Dashboard({ onLogout, onLeads, onPipeline, onCustomers, 
   useEffect(() => { loadDashboard(); }, []);
 
   function exit() { logout(); onLogout(); }
+
+  async function clearAllData() {
+    const confirmed = window.confirm("WARNING: This will permanently delete ALL CRM data for this company, including customers, leads, sales, payments and invoices. Your login and company settings will remain. Continue?");
+    if (!confirmed) return;
+    const phrase = window.prompt("Type DELETE to permanently clear all CRM data:");
+    if (phrase !== "DELETE") return;
+    setError("");
+    try {
+      await clearCompanyCrmData();
+      await loadDashboard();
+    } catch (err) {
+      setError(err.response?.data?.detail || "Unable to clear CRM data.");
+    }
+  }
 
   const cards = useMemo(() => summary ? [
     ["Total Leads", summary.total_leads],
