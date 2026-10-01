@@ -5,11 +5,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Leads from "./pages/Leads";
-import Pipeline from "./pages/Pipeline";
 import Customers from "./pages/Customers";
-import Sales from "./pages/Sales";
-import ImportExport from "./pages/ImportExport";
-import Reports from "./pages/Reports";
 import CustomerProfile from "./pages/CustomerProfile";
 import Fabrication from "./pages/Fabrication";
 import CompanySettings from "./pages/CompanySettings";
@@ -59,23 +55,15 @@ function App() {
 
   if (auth) {
     return page === "leads" ? <Leads onBack={() => setPage("dashboard")} />
-      : page === "pipeline" ? <Pipeline onBack={() => setPage("dashboard")} onLeads={() => setPage("leads")} />
       : page === "customers" ? <Customers onBack={() => setPage("dashboard")} onProfile={(id) => { setSelectedCustomer(id); setPage("customer-profile"); }} />
       : page === "customer-profile" ? <CustomerProfile customerId={selectedCustomer} onBack={() => setPage("customers")} />
       : page === "fabrication" ? <Fabrication onBack={() => setPage("dashboard")} />
       : page === "settings" ? <CompanySettings onBack={() => setPage("dashboard")} />
-      : page === "sales" ? <Sales onBack={() => setPage("dashboard")} />
-      : page === "import" ? <ImportExport onBack={() => setPage("dashboard")} />
-      : page === "reports" ? <Reports onBack={() => setPage("dashboard")} />
       : <Dashboard
           onLogout={() => { localStorage.clear(); setAuth(false); }}
           onLeads={() => setPage("leads")}
-          onPipeline={() => setPage("pipeline")}
           onCustomers={() => setPage("customers")}
           onFabrication={() => setPage("fabrication")}
-          onSales={() => setPage("sales")}
-          onImport={() => setPage("import")}
-          onReports={() => setPage("reports")}
           onSettings={() => setPage("settings")}
         />;
   }
