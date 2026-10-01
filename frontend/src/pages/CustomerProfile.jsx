@@ -10,6 +10,7 @@ export default function CustomerProfile({ customerId, onBack }) {
   const [data, setData] = useState(null);
   const [company, setCompany] = useState(null);
   const [assets, setAssets] = useState({});
+  const [fabricationJobs, setFabricationJobs] = useState([]);
   const [document, setDocument] = useState(null);
   const [error, setError] = useState("");
   const [proofBusy, setProofBusy] = useState(null);
@@ -17,12 +18,14 @@ export default function CustomerProfile({ customerId, onBack }) {
 
   async function load() {
     try {
-      const [profile, companyRes] = await Promise.all([
+      const [profile, companyRes, fabricationRes] = await Promise.all([
         api.get("/api/v1/customers/" + customerId + "/profile"),
         api.get("/api/v1/billing/company"),
+        api.get("/api/v1/fabrication"),
       ]);
       setData(profile.data);
       setCompany(companyRes.data);
+      setFabricationJobs((fabricationRes.data.items || []).filter(job => Number(job.customer_id) === Number(customerId)));
       const next = {};
       for (const kind of ["logo", "signature", "stamp"]) {
         if (companyRes.data.assets?.[kind]) {
@@ -87,11 +90,11 @@ export default function CustomerProfile({ customerId, onBack }) {
     {error && <div className="error">{error}</div>}
 
     <section className="profile-summary">
-      <div><span>Total Sales</span><strong>{money(data.summary.total_sales)}</strong></div>
+      <div><span>Job Value</span><strong>{money(data.summary.total_sales)}</strong></div>
       <div><span>Total Paid</span><strong>{money(data.summary.collected)}</strong></div>
       <div><span>Outstanding</span><strong>{money(data.summary.outstanding)}</strong></div>
       <div><span>Payments</span><strong>{data.summary.payment_count}</strong></div>
-      <div><span>Invoices</span><strong>{data.summary.invoice_count}</strong></div>
+      <div><span>Bills</span><strong>{data.summary.invoice_count}</strong></div>
     </section>
 
     <section className="panel">
@@ -106,12 +109,22 @@ export default function CustomerProfile({ customerId, onBack }) {
     </section>
 
     <section className="panel">
-      <div className="toolbar"><div><h2>Sales & Invoices</h2><span className="record-count">{data.sales.length} sale(s)</span></div></div>
+      <div className="toolbar"><div><h2>Jobs & Bills</h2><span className="record-count">{data.sales.length} bill record(s)</span></div></div>
       <div className="profile-list">
         {data.sales.length ? data.sales.map(s => <div className="profile-row" key={s.id}>
           <div><strong>{money(s.amount)}</strong><small>{date(s.sale_date)} • {s.status}</small><small>{s.notes || "Fabrication work"}</small></div>
           <div className="profile-row-actions"><button className="small" onClick={() => invoice(s.id)}>Bill</button></div>
-        </div>) : <div className="empty-state">No sales yet.</div>}
+        </div>) : <div className="empty-state">No bill records yet.</div>}
+      </div>
+    </section>
+
+    <section className="panel">
+      <div className="toolbar"><div><h2>🏭 Fabrication Jobs</h2><span className="record-count">{fabricationJobs.length} job(s)</span></div></div>
+      <div className="profile-list">
+        {fabricationJobs.length ? fabricationJobs.map(job => <div className="profile-row" key={job.id}>
+          <div><strong>{job.work}</strong><small>Stage: {job.stage} • {job.measurement || "Measurement pending"}</small><small>{job.site || "Site not added"} • Delivery: {job.delivery ? dateOnly(job.delivery) : "-"}</small></div>
+          <div className="profile-row-actions"><strong>{money(job.amount)}</strong></div>
+        </div>) : <div className="empty-state">No linked fabrication jobs yet.</div>}
       </div>
     </section>
 
