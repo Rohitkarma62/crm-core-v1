@@ -494,3 +494,50 @@ table tbody tr:last-child td{border-bottom:0}
   .table-wrap table{min-width:720px}
   .fab-order-actions{grid-template-columns:1fr}
 }
+
+
+/* Workshop pages: final mobile form/table normalization */
+.workshop-page .workshop-form{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px 18px!important}
+.workshop-page .workshop-form label{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:7px!important;min-width:0!important;font-size:14px!important;font-weight:700!important;color:#334155!important}
+.workshop-page .workshop-form label span{display:block!important;line-height:1.3!important}
+.workshop-page .workshop-form input,
+.workshop-page .workshop-form select,
+.workshop-page .workshop-form textarea{display:block!important;width:100%!important;min-width:0!important;height:44px!important;padding:10px 12px!important;border:1px solid #cbd5e1!important;border-radius:9px!important;background:#fff!important;color:#111827!important}
+.workshop-page .workshop-form textarea{height:100px!important;min-height:100px!important;resize:vertical!important}
+.workshop-page .workshop-form .full-field{grid-column:1/-1!important}
+.workshop-page .panel-heading{margin-bottom:18px}
+.workshop-page .panel-heading h2{margin:0!important}
+.workshop-page .panel-heading p{margin:5px 0 0!important;color:#64748b!important;font-size:14px!important}
+.employees-page .table-wrap table{min-width:680px}
+.expenses-page .table-wrap table{min-width:760px}
+.workshop-page .page-head{width:100%}
+.workshop-page .page-head h1{overflow-wrap:anywhere}
+@media(max-width:700px){
+  .workshop-page .page-head{gap:10px!important}
+  .workshop-page .page-head .secondary{width:max-content!important}
+  .workshop-page .page-head h1{font-size:30px!important;line-height:1.15!important}
+  .workshop-page .page-head .form-help{margin-bottom:0!important}
+  .workshop-page .workshop-form{grid-template-columns:1fr!important;gap:13px!important}
+  .workshop-page .workshop-form .full-field{grid-column:auto!important}
+  .workshop-page .workshop-form .form-actions{grid-column:auto!important}
+  .workshop-page .workshop-form .form-actions button{width:100%!important}
+  .workshop-page .panel{padding:16px!important}
+  .employees-page .table-wrap,.expenses-page .table-wrap{overflow-x:auto!important}
+  .employees-page .table-wrap table,.expenses-page .table-wrap table{min-width:0!important;width:100%!important}
+  .employees-page .table-wrap th:nth-child(3),.employees-page .table-wrap td:nth-child(3){display:none}
+  .employees-page .table-wrap th:nth-child(4),.employees-page .table-wrap td:nth-child(4){display:none}
+  .employees-page .table-wrap th:nth-child(5),.employees-page .table-wrap td:nth-child(5){display:none}
+  .employees-page .table-wrap th,.employees-page .table-wrap td{padding:10px 8px!important;font-size:13px!important}
+  .expenses-page .table-wrap table{display:block!important}
+  .expenses-page .table-wrap thead{display:none!important}
+  .expenses-page .table-wrap tbody,.expenses-page .table-wrap tr,.expenses-page .table-wrap td{display:block!important;width:100%!important}
+  .expenses-page .table-wrap tr{padding:11px 12px!important;border-bottom:1px solid #eef2f7!important}
+  .expenses-page .table-wrap td{padding:2px 0!important;border:0!important}
+  .expenses-page .table-wrap td:nth-child(1)::before{content:"Date: ";font-weight:700;color:#64748b}
+  .expenses-page .table-wrap td:nth-child(2)::before{content:"Category: ";font-weight:700;color:#64748b}
+  .expenses-page .table-wrap td:nth-child(3)::before{content:"Expense: ";font-weight:700;color:#64748b}
+  .expenses-page .table-wrap td:nth-child(4)::before{content:"Work Order: ";font-weight:700;color:#64748b}
+  .expenses-page .table-wrap td:nth-child(5)::before{content:"Amount: ";font-weight:700;color:#64748b}
+  .expenses-page .table-wrap td:nth-child(6)::before{content:"Payment: ";font-weight:700;color:#64748b}
+  .expenses-page .table-wrap td[colspan]{padding:18px!important;text-align:center}
+}
