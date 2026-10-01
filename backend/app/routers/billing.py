@@ -55,8 +55,8 @@ def clear_company_crm_data(db: Session=Depends(get_db), user: User=Depends(get_c
     bid = user.business_id
 
     # Delete deepest dependent records first so SQLite/Postgres foreign keys remain valid.
-    payment_ids = [p.id for p in db.scalars(select(Payment.id).where(Payment.business_id == bid)).all()]
-    sale_ids = [s.id for s in db.scalars(select(Sale.id).where(Sale.business_id == bid)).all()]
+    payment_ids = list(db.scalars(select(Payment.id).where(Payment.business_id == bid)).all())
+    sale_ids = list(db.scalars(select(Sale.id).where(Sale.business_id == bid)).all())
 
     if payment_ids:
         db.query(PaymentProof).filter(PaymentProof.business_id == bid).delete(synchronize_session=False)
