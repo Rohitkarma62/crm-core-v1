@@ -112,3 +112,22 @@ class ImportJob(Base):
     staged_headers: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(20), default="staged")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class FabricationOrder(Base):
+    __tablename__ = "fabrication_orders"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id", ondelete="CASCADE"), index=True)
+    customer_id: Mapped[int | None] = mapped_column(ForeignKey("customers.id", ondelete="SET NULL"), index=True)
+    lead_id: Mapped[int | None] = mapped_column(ForeignKey("leads.id", ondelete="SET NULL"), index=True)
+    customer_name: Mapped[str] = mapped_column(String(120))
+    phone: Mapped[str | None] = mapped_column(String(30))
+    site: Mapped[str | None] = mapped_column(Text)
+    work: Mapped[str] = mapped_column(String(255))
+    measurement: Mapped[str | None] = mapped_column(String(255))
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0)
+    delivery_date: Mapped[datetime | None] = mapped_column(DateTime)
+    stage: Mapped[str] = mapped_column(String(40), default="New Enquiry", index=True)
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
