@@ -1,5 +1,5 @@
 from datetime import datetime
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from ..database import get_db
@@ -36,27 +36,46 @@ def build_response(user: User, business: Business) -> AuthResponse:
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 async def register(
-    business_name: str = Form(..., min_length=2, max_length=150),
-    name: str = Form(..., min_length=2, max_length=120),
-    owner_name: str = Form(..., min_length=2, max_length=120),
-    email: str = Form(...),
-    password: str = Form(..., min_length=8, max_length=128),
+    request: Request,
+    business_name: str | None = Form(default=None, min_length=2, max_length=150),
+    name: str | None = Form(default=None, min_length=2, max_length=120),
+    owner_name: str | None = Form(default=None, min_length=2, max_length=120),
+    email: str | None = Form(default=None),
+    password: str | None = Form(default=None, min_length=8, max_length=128),
     phone: str | None = Form(default=None, max_length=30),
     address: str | None = Form(default=None),
     gstin: str | None = Form(default=None, max_length=30),
     industry: str | None = Form(default=None, max_length=100),
-    logo: UploadFile = File(...),
-    signature: UploadFile = File(...),
+    logo: UploadFile | None = File(default=None),
+    signature: UploadFile | None = File(default=None),
     stamp: UploadFile | None = File(default=None),
     db: Session = Depends(get_db),
 ):
+    if request.headers.get("content-type", "").startswith("application/json"):
+        payload = await request.json()
+        business_name = payload.get("business_name")
+        name = payload.get("name")
+        owner_name = payload.get("owner_name") or name
+        email = payload.get("email")
+        password = payload.get("password")
+        phone = payload.get("phone")
+        address = payload.get("address")
+        gstin = payload.get("gstin")
+        industry = payload.get("industry")
+
+    required = {"business_name": business_name, "name": name, "email": email, "password": password}
+    missing = [key for key, value in required.items() if not value]
+    if missing:
+        raise HTTPException(status_code=422, detail="Missing required registration fields: " + ", ".join(missing))
+    owner_name = owner_name or name
+
     email_value = email.strip().lower()
     existing = db.scalar(select(User).where(User.email == email_value))
     if existing:
         raise HTTPException(status_code=409, detail="An account with this email already exists")
 
-    logo_file = await read_registration_asset(logo, "Company logo")
-    signature_file = await read_registration_asset(signature, "Owner signature")
+    logo_file = await read_registration_asset(logo, "Company logo") if logo else None
+    signature_file = await read_registration_asset(signature, "Owner signature") if signature else None
     stamp_file = await read_registration_asset(stamp, "Company stamp") if stamp else None
 
     business = Business(
@@ -83,11 +102,7 @@ async def register(
                 data=data,
             ))
 
-    role = Role(
-        business_id=business.id,
-        name="Admin",
-        permissions={"all": True},
-    )
+    role = Role(business_id=business.id, name="Admin", permissions={"all": True})
     db.add(role)
     for stage_name, color, sort_order, is_final in DEFAULT_STAGES:
         db.add(LeadStatus(business_id=business.id, name=stage_name, color=color, sort_order=sort_order, is_final=is_final))
