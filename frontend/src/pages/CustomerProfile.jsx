@@ -187,7 +187,6 @@ export default function CustomerProfile({ customerId, onBack }) {
           <div className="invoice-signatures">
             {assets.stamp && <img className="invoice-stamp" src={assets.stamp} alt="Company stamp" />}
             {assets.signature && <img className="invoice-signature" src={assets.signature} alt="Owner signature" />}
-            <small>मालिक के हस्ताक्षर</small>
           </div>
         </div>
       </div>
