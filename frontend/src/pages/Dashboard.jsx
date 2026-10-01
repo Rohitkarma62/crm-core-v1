@@ -82,6 +82,14 @@ export default function Dashboard({ onLogout, onLeads, onPipeline, onCustomers, 
       </div>
     </section>
 
+    <section className="danger-zone">
+      <div>
+        <strong>CRM Data Cleanup</strong>
+        <span>Delete all customers, leads, sales, payments and invoices. Your login and company settings will remain.</span>
+      </div>
+      <button className="danger-button" onClick={clearAllData}>🗑 Delete All CRM Data</button>
+    </section>
+
     {error && <div className="dashboard-error">{error}</div>}
     {loading ? <div className="dashboard-loading">Loading dashboard...</div> : <>
       <section className="stats">
