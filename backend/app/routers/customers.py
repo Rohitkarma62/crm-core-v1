@@ -4,10 +4,31 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..dependencies import get_current_user
 from ..models.core import User
-from ..models.crm import Activity, Customer, Lead, LeadStatus
+from ..models.crm import Activity, Customer, Lead, LeadStatus, Sale, Payment
 from ..schemas.customers import CustomerCreate, CustomerListResponse, CustomerResponse, CustomerUpdate
 
 router = APIRouter(prefix="/api/v1/customers", tags=["Customers"])
+
+def customer_response(customer: Customer, db: Session):
+    sales = db.scalars(select(Sale).where(Sale.customer_id == customer.id, Sale.business_id == customer.business_id)).all()
+    sale_ids = [s.id for s in sales]
+    payments = db.scalars(select(Payment).where(Payment.customer_id == customer.id, Payment.business_id == customer.business_id).order_by(Payment.payment_date.desc())).all()
+    total_sales = sum(float(s.amount) for s in sales)
+    completed = [p for p in payments if p.status == "completed"]
+    collected = sum(float(p.amount) for p in completed)
+    breakup = {}
+    for p in completed:
+        method = p.payment_method or "other"
+        breakup[method] = breakup.get(method, 0) + float(p.amount)
+    data = CustomerResponse.model_validate(customer).model_dump()
+    data.update({
+        "total_sales": round(total_sales, 2),
+        "collected": round(collected, 2),
+        "outstanding": round(max(total_sales - collected, 0), 2),
+        "payment_breakup": [{"method": k, "amount": round(v, 2)} for k, v in sorted(breakup.items(), key=lambda x: x[1], reverse=True)],
+        "payment_history": payments,
+    })
+    return CustomerResponse.model_validate(data)
 
 def get_customer_or_404(customer_id: int, user: User, db: Session):
     customer = db.scalar(select(Customer).where(Customer.id == customer_id, Customer.business_id == user.business_id))
@@ -31,7 +52,7 @@ def list_customers(search: str | None = None, page: int = Query(1, ge=1), page_s
         conditions.append(or_(Customer.name.ilike(term), Customer.phone.ilike(term), Customer.email.ilike(term), Customer.company.ilike(term)))
     total = db.scalar(select(func.count()).select_from(Customer).where(*conditions)) or 0
     items = db.scalars(select(Customer).where(*conditions).order_by(Customer.created_at.desc()).offset((page - 1) * page_size).limit(page_size)).all()
-    return CustomerListResponse(items=items, total=total, page=page, page_size=page_size)
+    return CustomerListResponse(items=[customer_response(c, db) for c in items], total=total, page=page, page_size=page_size)
 
 @router.post("", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
 def create_customer(payload: CustomerCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
@@ -49,7 +70,7 @@ def create_customer(payload: CustomerCreate, db: Session = Depends(get_db), user
 
 @router.get("/{customer_id}", response_model=CustomerResponse)
 def get_customer(customer_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return get_customer_or_404(customer_id, user, db)
+    return customer_response(get_customer_or_404(customer_id, user, db), db)
 
 @router.put("/{customer_id}", response_model=CustomerResponse)
 def update_customer(customer_id: int, payload: CustomerUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
