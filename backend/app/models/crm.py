@@ -131,3 +131,42 @@ class FabricationOrder(Base):
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class Employee(Base):
+    __tablename__ = "employees"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    phone: Mapped[str | None] = mapped_column(String(30))
+    role: Mapped[str | None] = mapped_column(String(80))
+    wage_type: Mapped[str] = mapped_column(String(20), default="daily")
+    wage_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0)
+    active: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+class EmployeeAttendance(Base):
+    __tablename__ = "employee_attendance"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id", ondelete="CASCADE"), index=True)
+    employee_id: Mapped[int] = mapped_column(ForeignKey("employees.id", ondelete="CASCADE"), index=True)
+    work_date: Mapped[datetime] = mapped_column(DateTime, index=True)
+    status: Mapped[str] = mapped_column(String(20), default="present")
+    days: Mapped[Decimal] = mapped_column(Numeric(5, 2), default=1)
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0)
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+class WorkshopExpense(Base):
+    __tablename__ = "workshop_expenses"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id", ondelete="CASCADE"), index=True)
+    work_order_id: Mapped[int | None] = mapped_column(ForeignKey("fabrication_orders.id", ondelete="SET NULL"), index=True)
+    employee_id: Mapped[int | None] = mapped_column(ForeignKey("employees.id", ondelete="SET NULL"), index=True)
+    expense_date: Mapped[datetime] = mapped_column(DateTime, index=True, default=datetime.utcnow)
+    category: Mapped[str] = mapped_column(String(40), default="Other")
+    title: Mapped[str] = mapped_column(String(150))
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0)
+    payment_method: Mapped[str | None] = mapped_column(String(30))
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
