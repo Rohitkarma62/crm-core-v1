@@ -13,8 +13,8 @@ export default function Reports({ onBack }) {
   async function load() {
     setLoading(true); setError("");
     const params = {};
-    if (from) params.date_from = from;
-    if (to) params.date_to = to;
+    if (from) params.start_date = from;
+    if (to) params.end_date = to;
     try {
       const [leads, sales, payments, staff] = await Promise.all([
         api.get("/api/v1/reports/leads", { params }),
@@ -34,18 +34,18 @@ export default function Reports({ onBack }) {
     {error && <p className="error">{error}</p>}
     {loading ? <div className="card">Loading reports...</div> : <>
       <section className="stats">
-        <div className="stat"><span>Total Leads</span><b>{data.leads?.total_leads || 0}</b></div>
+        <div className="stat"><span>Total Leads</span><b>{data.leads?.total || 0}</b></div>
         <div className="stat"><span>Conversion</span><b>{data.leads?.conversion_rate || 0}%</b></div>
         <div className="stat"><span>Sales</span><b>{data.sales?.total_sales || 0}</b></div>
-        <div className="stat"><span>Revenue</span><b>{money(data.sales?.total_amount)}</b></div>
-        <div className="stat"><span>Collected</span><b>{money(data.sales?.paid_amount)}</b></div>
-        <div className="stat"><span>Outstanding</span><b>{money(data.sales?.outstanding_amount)}</b></div>
+        <div className="stat"><span>Revenue</span><b>{money(data.sales?.total_value)}</b></div>
+        <div className="stat"><span>Collected</span><b>{money(data.sales?.collected)}</b></div>
+        <div className="stat"><span>Outstanding</span><b>{money(data.sales?.outstanding)}</b></div>
       </section>
       <section className="dashboard-grid">
-        <div className="dashboard-panel"><div className="panel-title"><h2>Lead Status</h2></div>{Object.entries(data.leads?.status_breakdown || {}).map(([k,v])=><div className="metric-row" key={k}><span>{k}</span><strong>{v}</strong></div>)}</div>
-        <div className="dashboard-panel"><div className="panel-title"><h2>Lead Sources</h2></div>{Object.entries(data.leads?.source_breakdown || {}).map(([k,v])=><div className="metric-row" key={k}><span>{k}</span><strong>{v}</strong></div>)}</div>
-        <div className="dashboard-panel"><div className="panel-title"><h2>Payments</h2></div>{Object.entries(data.payments?.method_breakdown || {}).map(([k,v])=><div className="metric-row" key={k}><span>{k}</span><strong>{money(v)}</strong></div>)}</div>
-        <div className="dashboard-panel"><div className="panel-title"><h2>Staff Performance</h2></div>{(data.staff?.items || []).map((x)=><div className="metric-row" key={x.user_id}><span>{x.name}</span><strong>{x.converted_leads} converted · {money(x.revenue)}</strong></div>)}</div>
+        <div className="dashboard-panel"><div className="panel-title"><h2>Lead Status</h2></div>{(data.leads?.by_status || []).map(x => [x.name, x.count]).map(([k,v])=><div className="metric-row" key={k}><span>{k}</span><strong>{v}</strong></div>)}</div>
+        <div className="dashboard-panel"><div className="panel-title"><h2>Lead Sources</h2></div>{(data.leads?.by_source || []).map(x => [x.name, x.count]).map(([k,v])=><div className="metric-row" key={k}><span>{k}</span><strong>{v}</strong></div>)}</div>
+        <div className="dashboard-panel"><div className="panel-title"><h2>Payments</h2></div>{(data.payments?.by_method || []).map(x => [x.name, x.amount]).map(([k,v])=><div className="metric-row" key={k}><span>{k}</span><strong>{money(v)}</strong></div>)}</div>
+        <div className="dashboard-panel"><div className="panel-title"><h2>Staff Performance</h2></div>{(data.staff?.staff || []).map((x)=><div className="metric-row" key={x.id}><span>{x.name}</span><strong>{x.converted} converted · {x.sales} sales</strong></div>)}</div>
       </section>
     </>}
   </div>;
