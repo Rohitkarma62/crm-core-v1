@@ -6,7 +6,7 @@ from ..dependencies import get_current_user
 from ..models.core import User
 from ..models.crm import Activity, Customer, Lead, LeadStatus, Sale, Payment
 from ..models.billing import Invoice, Receipt, PaymentProof
-from ..schemas.customers import CustomerCreate, CustomerListResponse, CustomerResponse, CustomerUpdate
+from ..schemas.customers import CustomerCreate, CustomerListResponse, CustomerResponse, CustomerUpdate, CustomerPayment
 
 router = APIRouter(prefix="/api/v1/customers", tags=["Customers"])
 
@@ -26,8 +26,8 @@ def customer_response(customer: Customer, db: Session):
         "total_sales": round(total_sales, 2),
         "collected": round(collected, 2),
         "outstanding": round(max(total_sales - collected, 0), 2),
-        "payment_breakup": [{"method": k, "amount": round(v, 2)} for k, v in sorted(breakup.items(), key=lambda x: x[1], reverse=True)],
-        "payment_history": payments,
+        "payment_breakup": [{\"method\": k, \"amount\": round(v, 2)} for k, v in sorted(breakup.items(), key=lambda x: x[1], reverse=True)],
+        "payment_history": [CustomerPayment.model_validate(p) for p in payments],
     })
     return CustomerResponse.model_validate(data)
 
@@ -164,3 +164,4 @@ def convert_lead_to_customer(lead_id: int, db: Session = Depends(get_db), user: 
     db.add(Activity(business_id=user.business_id, lead_id=lead.id, user_id=user.id, type="CONVERSION", description=f"Lead converted to customer #{customer.id}"))
     db.commit(); db.refresh(customer)
     return customer
+
