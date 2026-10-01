@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { api } from "../services/api";
+import { api, clearCompanyCrmData } from "../services/api";
 
 const blank = { name:"", phone:"", email:"", company:"", priority:"medium", interested_service:"", estimated_value:"", notes:"" };
 
@@ -22,6 +22,15 @@ export default function Leads({ onBack }) {
 
   function change(e) { setForm({ ...form, [e.target.name]: e.target.value }); }
 
+  async function clearAllData() {
+    if (!window.confirm("WARNING: This will permanently delete ALL CRM data for this company. Continue?")) return;
+    const phrase = window.prompt("Type DELETE to permanently clear all CRM data:");
+    if (phrase !== "DELETE") return;
+    setError("");
+    try { await clearCompanyCrmData(); setLeads([]); }
+    catch (e) { setError(e.response?.data?.detail || "Unable to clear CRM data"); }
+  }
+
   async function submit(e) {
     e.preventDefault();
     if (saving) return;
@@ -39,7 +48,7 @@ export default function Leads({ onBack }) {
   function edit(lead) { setEditing(lead.id); setForm({ name:lead.name, phone:lead.phone, email:lead.email||"", company:lead.company||"", priority:lead.priority, interested_service:lead.interested_service||"", estimated_value:lead.estimated_value||"", notes:lead.notes||"" }); window.scrollTo({top:0,behavior:"smooth"}); }
 
   return <main className="page leads-page">
-    <div className="page-head"><button className="secondary" onClick={onBack}>← Dashboard</button><h1>Leads</h1></div>
+    <div className="page-head"><div><button className="secondary" onClick={onBack}>← Dashboard</button><h1>Leads</h1></div><button className="danger-button page-cleanup-btn" onClick={clearAllData}>🗑 Clean Data</button></div>
     <section className="panel">
       <h2>{editing ? "Edit Lead" : "Add Lead"}</h2><p className="form-help">Capture and manage your sales leads.</p>
       <form className="form-grid lead-form" onSubmit={submit}>
