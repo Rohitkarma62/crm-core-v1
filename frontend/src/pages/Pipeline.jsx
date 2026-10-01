@@ -60,8 +60,8 @@ export default function Pipeline({ onBack, onLeads }) {
           <p className="form-help">Move leads through each stage of your sales process.</p>
         </div>
         <div className="pipeline-head-actions">
-          <button className="secondary" onClick={load} disabled={loading}>↻ Refresh</button>
-          <button onClick={onLeads}>+ Add Lead</button>
+          <button className="secondary pipeline-refresh-btn" onClick={load} disabled={loading}>↻ Refresh</button>
+          <button className="primary pipeline-add-lead-btn" onClick={onLeads}>+ Add Lead</button>
         </div>
       </div>
 
