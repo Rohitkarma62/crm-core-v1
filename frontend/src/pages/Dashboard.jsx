@@ -58,7 +58,7 @@ export default function Dashboard({ onLogout, onEnquiries, onPipeline, onQuotati
 
     <section className="welcome">
       <div className="row">
-        <div><h1>Workshop Dashboard</h1><p>Enquiry → Measurement → Quotation → Work Order → Production → Delivery → Payment</p></div>
+        <div><h1>Workshop Dashboard</h1></div>
         <div className="dashboard-actions">
           <button onClick={onEnquiries}>📋 Enquiries</button>
           <button onClick={onPipeline}>🔄 Pipeline</button>
