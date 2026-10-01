@@ -45,3 +45,11 @@ class AuthResponse(BaseModel):
     token_type: str = "bearer"
     user: UserResponse
     business: BusinessResponse
+
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+class PasswordResetConfirm(BaseModel):
+    token: str = Field(min_length=20, max_length=200)
+    password: str = Field(min_length=8, max_length=128)
