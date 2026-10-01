@@ -18,18 +18,15 @@ def sqlite_path(url: str) -> Path | None:
 def main() -> None:
     target = sqlite_path(settings.database_url)
     legacy = sqlite_path(os.getenv("DATABASE_URL", ""))
-    if not target or not legacy or target.resolve() == legacy.resolve():
-        return
+    if target:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        # Preserve the existing ephemeral DB on the first deployment that gets a
+        # persistent volume. Never overwrite an existing persistent database.
+        if legacy and target.resolve() != legacy.resolve() and not target.exists() and legacy.exists():
+            shutil.copy2(legacy, target)
+            print(f"Copied legacy SQLite database to persistent path: {target}")
 
-    target.parent.mkdir(parents=True, exist_ok=True)
-
-    # Preserve the existing ephemeral DB on the first deployment that gets a
-    # persistent volume. Never overwrite an existing persistent database.
-    if not target.exists() and legacy.exists():
-        shutil.copy2(legacy, target)
-        print(f"Copied legacy SQLite database to persistent path: {target}")
-
-    # Create any newly added tables without disturbing existing business data.
+    # Always create newly added tables. create_all is additive and does not overwrite existing rows.
     Base.metadata.create_all(bind=engine)
 
 
