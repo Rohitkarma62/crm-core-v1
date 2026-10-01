@@ -4,7 +4,7 @@ import { api, logout } from "../services/api";
 const money = (value) => `₹${Number(value || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 const dateTime = (value) => new Date(value).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
 
-export default function Dashboard({ onLogout, onLeads, onPipeline, onCustomers, onSales, onImport, onReports }) {
+export default function Dashboard({ onLogout, onLeads, onPipeline, onCustomers, onSales, onImport, onReports, onSettings }) {
   const safeJson = (key) => { try { return JSON.parse(localStorage.getItem(key) || "{}"); } catch { return {}; } };
   const user = safeJson("crm_user");
   const business = safeJson("crm_business");
@@ -62,7 +62,7 @@ export default function Dashboard({ onLogout, onLeads, onPipeline, onCustomers, 
         <div><h1>Dashboard</h1><p>Live business overview from your CRM data.</p></div>
         <div className="dashboard-actions">
           <button onClick={onLeads}>Leads</button><button onClick={onPipeline}>Pipeline</button>
-          <button onClick={onCustomers}>Customers</button><button onClick={onSales}>Sales</button><button onClick={onImport}>Import / Export</button><button onClick={onReports}>Reports</button>
+          <button onClick={onCustomers}>Customers</button><button onClick={onSales}>Sales</button><button onClick={onImport}>Import / Export</button><button onClick={onReports}>Reports</button><button onClick={onSettings}>Company / Bill Settings</button>
           <button onClick={loadDashboard}>Refresh</button>
         </div>
       </div>
