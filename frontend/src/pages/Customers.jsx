@@ -37,6 +37,7 @@ export default function Customers({ onBack }) {
 
   async function save(e) {
     e.preventDefault();
+    if (saving) return;
     setError("");
     setSaving(true);
     try {
