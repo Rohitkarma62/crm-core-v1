@@ -45,3 +45,14 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+
+export async function requestPasswordReset(email) {
+  const { data: result } = await api.post("/api/v1/auth/forgot-password", { email });
+  return result;
+}
+
+export async function resetPassword(token, password) {
+  const { data: result } = await api.post("/api/v1/auth/reset-password", { token, password });
+  return result;
+}
