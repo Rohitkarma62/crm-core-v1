@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000",
+  baseURL: import.meta.env.VITE_API_URL || "https://crm-core-v1-production.up.railway.app",
   headers: { "Content-Type": "application/json" },
 });
 
@@ -32,7 +32,6 @@ export function logout() {
   localStorage.removeItem("crm_user");
   localStorage.removeItem("crm_business");
 }
-
 
 api.interceptors.response.use(
   (response) => response,
