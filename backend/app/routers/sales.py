@@ -70,11 +70,18 @@ def create_sale(payload: SaleCreate, db: Session = Depends(get_db), user: User =
         from ..models.crm import Lead
         if not db.scalar(select(Lead.id).where(Lead.id == payload.lead_id, Lead.business_id == user.business_id)):
             raise HTTPException(400, "Invalid lead")
+    payment_total = sum((p.amount for p in payload.payments), Decimal("0"))
+    if payment_total > payload.amount:
+        raise HTTPException(400, "Initial payments cannot exceed sale amount")
     sale = Sale(business_id=user.business_id, customer_id=payload.customer_id, lead_id=payload.lead_id,
                 amount=payload.amount, sale_date=payload.sale_date or datetime.utcnow(), notes=payload.notes)
-    db.add(sale); db.flush(); sync_sale_status(sale, db); db.commit(); db.refresh(sale)
+    db.add(sale); db.flush()
+    for p in payload.payments:
+        db.add(Payment(business_id=user.business_id, customer_id=payload.customer_id, sale_id=sale.id,
+                       amount=p.amount, payment_method=p.payment_method,
+                       payment_date=p.payment_date or datetime.utcnow(), reference=p.reference))
+    sync_sale_status(sale, db); db.commit(); db.refresh(sale)
     return sale_response(sale, db)
-
 
 @router.get("/sales/{sale_id}", response_model=SaleResponse)
 def get_sale_detail(sale_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
