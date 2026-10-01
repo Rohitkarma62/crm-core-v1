@@ -1,6 +1,7 @@
 import React, { Component, useState } from "react";
 import { createRoot } from "react-dom/client";
 import Login from "./pages/Login";
+import ResetPassword from "./pages/ResetPassword";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Leads from "./pages/Leads";
@@ -53,6 +54,7 @@ function App() {
   const [mode, setMode] = useState("login");
   const [page, setPage] = useState("dashboard");
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const resetToken = new URLSearchParams(window.location.search).get("reset_token");
 
   if (auth) {
     return page === "leads" ? <Leads onBack={() => setPage("dashboard")} />
@@ -74,6 +76,8 @@ function App() {
           onSettings={() => setPage("settings")}
         />;
   }
+
+  if (resetToken) return <ResetPassword token={resetToken} onDone={() => { window.history.replaceState({}, "", window.location.pathname); setMode("login"); }} />;
 
   return mode === "login"
     ? <><Login onAuthenticated={() => setAuth(true)} /><button className="switch" onClick={() => setMode("register")}>Create a new business account</button></>
