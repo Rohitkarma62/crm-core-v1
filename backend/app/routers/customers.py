@@ -108,6 +108,15 @@ def delete_customer(customer_id: int, db: Session = Depends(get_db), user: User 
 
     # Remove every tenant-owned financial child record that references this customer.
     # Payments can reference the customer directly even if their sale lookup differs.
+    from ..models.billing import Invoice, Receipt, PaymentProof
+    payment_ids = [p.id for p in db.scalars(select(Payment).where(Payment.customer_id == customer.id, Payment.business_id == user.business_id)).all()]
+    if payment_ids:
+        db.query(PaymentProof).filter(PaymentProof.payment_id.in_(payment_ids), PaymentProof.business_id == user.business_id).delete(synchronize_session=False)
+        db.query(Receipt).filter(Receipt.payment_id.in_(payment_ids), Receipt.business_id == user.business_id).delete(synchronize_session=False)
+    sale_ids = [s.id for s in db.scalars(select(Sale).where(Sale.customer_id == customer.id, Sale.business_id == user.business_id)).all()]
+    if sale_ids:
+        db.query(Invoice).filter(Invoice.sale_id.in_(sale_ids), Invoice.business_id == user.business_id).delete(synchronize_session=False)
+
     db.query(Payment).filter(
         Payment.customer_id == customer.id,
         Payment.business_id == user.business_id
