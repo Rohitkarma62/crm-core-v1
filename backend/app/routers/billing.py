@@ -64,7 +64,7 @@ def clear_company_crm_data(db: Session=Depends(get_db), user: User=Depends(get_c
     if sale_ids:
         db.query(Invoice).filter(Invoice.business_id == bid).delete(synchronize_session=False)
 
-    for model in (Payment, Sale, Activity, FollowUp, Customer, ImportJob, Lead, LeadSource, LeadStatus):
+    for model in (Payment, Sale, WorkshopExpense, EmployeeAttendance, FabricationOrder, Employee, Activity, FollowUp, Customer, ImportJob, Lead, LeadSource, LeadStatus):
         db.query(model).filter(model.business_id == bid).delete(synchronize_session=False)
 
     db.commit()
