@@ -17,6 +17,14 @@ def get_customer_or_404(customer_id: int, user: User, db: Session):
 
 @router.get("", response_model=CustomerListResponse)
 def list_customers(search: str | None = None, page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    converted_status = db.scalar(select(LeadStatus).where(LeadStatus.business_id == user.business_id, func.lower(LeadStatus.name) == "converted"))
+    if converted_status:
+        converted_leads = db.scalars(select(Lead).where(Lead.business_id == user.business_id, Lead.status_id == converted_status.id)).all()
+        for lead in converted_leads:
+            existing = db.scalar(select(Customer).where(Customer.lead_id == lead.id, Customer.business_id == user.business_id))
+            if not existing:
+                db.add(Customer(business_id=user.business_id, lead_id=lead.id, name=lead.name, phone=lead.phone, email=lead.email, company=lead.company))
+        db.commit()
     conditions = [Customer.business_id == user.business_id]
     if search:
         term = f"%{search.strip()}%"
