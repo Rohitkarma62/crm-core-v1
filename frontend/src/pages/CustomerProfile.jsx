@@ -4,6 +4,7 @@ import { captureInvoice, openWhatsApp } from "../utils/documents";
 
 const money = (v) => "₹" + Number(v || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const date = (v) => v ? new Date(v).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "-";
+const dateOnly = (v) => v ? new Date(v).toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" }) : "-";
 
 export default function CustomerProfile({ customerId, onBack }) {
   const [data, setData] = useState(null);
@@ -144,22 +145,52 @@ export default function CustomerProfile({ customerId, onBack }) {
         <div className="document-actions"><button onClick={() => captureInvoice(previewRef.current, number, "pdf")}>PDF</button><button onClick={() => captureInvoice(previewRef.current, number, "png")}>Image</button></div>
       </div>
       <div ref={previewRef} className="invoice-preview">
-        {assets.logo && <img className="invoice-logo" src={assets.logo} alt="Company logo" />}
-        <h2>विश्वकर्मा फैब्रिकेशन वर्कशॉप</h2>
-        <p>मालिक: {company?.owner_name || "युवराज कर्मा"}</p>
-        <p>{company?.phone || "9977932342 / 7089117898 / 9131766526"}</p>
-        <p>{company?.address || "ग्राम घोटिया, जिला खरगोन, मध्य प्रदेश"}</p>
+        <div className="invoice-top">
+          <div className="invoice-brand">
+            {assets.logo && <img className="invoice-logo" src={assets.logo} alt="Company logo" />}
+            <div>
+              <h2>{company?.name || "विश्वकर्मा फैब्रिकेशन वर्कशॉप"}</h2>
+              <p><b>मालिक:</b> {company?.owner_name || "युवराज कर्मा"}</p>
+              <p>{company?.phone || "9977932342 / 7089117898 / 9131766526"}</p>
+              <p>{company?.address || "ग्राम घोटिया, जिला खरगोन, मध्य प्रदेश"}</p>
+              {company?.gstin && <p><b>GSTIN:</b> {company.gstin}</p>}
+            </div>
+          </div>
+          <div className="invoice-meta">
+            <h1>{document.type === "invoice" ? "बिल / चालान" : "भुगतान रसीद"}</h1>
+            <p><b>क्रमांक:</b> {number}</p>
+            <p><b>दिनांक:</b> {dateOnly(selectedSale?.sale_date || selectedPayment?.payment_date || new Date())}</p>
+          </div>
+        </div>
         <hr />
-        <h1>{document.type === "invoice" ? "बिल / चालान" : "भुगतान रसीद"}</h1>
-        <p><b>क्रमांक:</b> {number}</p>
-        <p><b>ग्राहक:</b> {c.name} • {c.phone}</p>
+        <div className="invoice-customer">
+          <div><span>ग्राहक</span><strong>{c.name}</strong></div>
+          <div><span>मोबाइल</span><strong>{c.phone || "-"}</strong></div>
+          <div><span>पता</span><strong>{c.address || "-"}</strong></div>
+        </div>
         {document.type === "invoice" ? <>
-          <table><tbody><tr><th>कार्य / विवरण</th><th>राशि</th></tr><tr><td>{selectedSale?.notes || "फैब्रिकेशन कार्य"}</td><td>{money(selectedSale?.amount)}</td></tr><tr><th>कुल भुगतान</th><th>{money(docData.paid_amount)}</th></tr><tr><th>बाकी राशि</th><th>{money(docData.balance_amount)}</th></tr></tbody></table>
-          <h3>भुगतान विवरण</h3>{docData.payments.map(p => <p key={p.id}>{date(p.payment_date)} • {p.payment_method || "Other"} • {money(p.amount)} • {p.reference || "-"}</p>)}
-          <p className="invoice-warranty"><b>वारंटी:</b> {company?.warranty_text}</p>
-        </> : <table><tbody><tr><th>भुगतान राशि</th><td>{money(selectedPayment?.amount)}</td></tr><tr><th>माध्यम</th><td>{selectedPayment?.payment_method || "-"}</td></tr><tr><th>संदर्भ</th><td>{selectedPayment?.reference || "-"}</td></tr></tbody></table>}
-        <div className="invoice-signatures">{assets.signature && <img src={assets.signature} alt="Owner signature" />}{assets.stamp && <img src={assets.stamp} alt="Company stamp" />}</div>
-        <p><b>युवराज कर्मा, मालिक</b></p>
+          <table className="invoice-table"><thead><tr><th>क्र.</th><th>कार्य / विवरण</th><th>राशि</th></tr></thead><tbody>
+            <tr><td>1</td><td>{selectedSale?.notes || "फैब्रिकेशन कार्य"}</td><td>{money(selectedSale?.amount)}</td></tr>
+            <tr className="invoice-total"><td colSpan="2">कुल बिल</td><td>{money(selectedSale?.amount)}</td></tr>
+            <tr><td colSpan="2">कुल भुगतान</td><td>{money(docData.paid_amount)}</td></tr>
+            <tr className="invoice-balance"><td colSpan="2">बाकी राशि</td><td>{money(docData.balance_amount)}</td></tr>
+          </tbody></table>
+          <div className="invoice-payment-box">
+            <h3>भुगतान विवरण</h3>
+            {docData.payments.length ? docData.payments.map(p => <div className="invoice-payment-row" key={p.id}><span>{dateOnly(p.payment_date)}</span><span>{p.payment_method || "Other"}</span><span>{money(p.amount)}</span><span>{p.reference || "-"}</span></div>) : <p>कोई भुगतान दर्ज नहीं है।</p>}
+          </div>
+          <div className="invoice-status">{Number(docData.balance_amount || 0) <= 0 ? "PAID / भुगतान पूर्ण" : "PAYMENT DUE / भुगतान बाकी"}</div>
+          {company?.warranty_text && <p className="invoice-warranty"><b>वारंटी:</b> {company.warranty_text}</p>}
+        </> : <table className="invoice-table"><tbody><tr><th>भुगतान राशि</th><td>{money(selectedPayment?.amount)}</td></tr><tr><th>दिनांक</th><td>{dateOnly(selectedPayment?.payment_date)}</td></tr><tr><th>माध्यम</th><td>{selectedPayment?.payment_method || "-"}</td></tr><tr><th>संदर्भ</th><td>{selectedPayment?.reference || "-"}</td></tr></tbody></table>}
+        <div className="invoice-footer">
+          <div><p>धन्यवाद!</p><p>कृपया भुगतान रसीद/बिल सुरक्षित रखें।</p></div>
+          <div className="invoice-signatures">
+            {assets.stamp && <img className="invoice-stamp" src={assets.stamp} alt="Company stamp" />}
+            {assets.signature && <img className="invoice-signature" src={assets.signature} alt="Owner signature" />}
+            <strong>{company?.owner_name || "युवराज कर्मा"}</strong>
+            <small>अधिकृत हस्ताक्षर / मालिक</small>
+          </div>
+        </div>
       </div>
     </section>}
   </main>;
