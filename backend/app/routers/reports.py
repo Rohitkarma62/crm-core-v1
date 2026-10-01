@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..dependencies import get_current_user
 from ..models.core import User
-from ..models.crm import Lead, LeadStatus, LeadSource, Sale, Payment, FollowUp
+from ..models.crm import Lead, LeadStatus, LeadSource, Sale, Payment, FollowUp, Customer
 
 router = APIRouter(prefix="/api/v1/reports", tags=["Reports"])
 
@@ -82,7 +82,15 @@ def payment_report(
     for p in rows:
         method = p.payment_method or "Other"; methods[method] = methods.get(method, 0) + money(p.amount) if p.status == "completed" else methods.get(method, 0)
         st = p.status or "unknown"; statuses[st] = statuses.get(st, 0) + money(p.amount)
-    return {"total_payments":len(completed_rows),"total_amount":round(sum(money(p.amount) for p in completed_rows),2),"by_method":[{"name":k,"amount":round(v,2)} for k,v in sorted(methods.items(), key=lambda x:x[1], reverse=True) if v > 0],"by_status":[{"name":k,"amount":round(v,2)} for k,v in statuses.items()]}
+    customer_ids = {p.customer_id for p in rows}
+    customers = db.query(Customer).filter(Customer.business_id == user.business_id, Customer.id.in_(customer_ids)).all() if customer_ids else []
+    customer_names = {c.id: c.name for c in customers}
+    history = [{
+        "id": p.id, "customer_id": p.customer_id, "customer_name": customer_names.get(p.customer_id, f"Customer #{p.customer_id}"),
+        "sale_id": p.sale_id, "amount": round(money(p.amount), 2), "payment_method": p.payment_method or "other",
+        "payment_date": p.payment_date.isoformat(), "status": p.status, "reference": p.reference
+    } for p in rows]
+    return {"total_payments":len(completed_rows),"total_amount":round(sum(money(p.amount) for p in completed_rows),2),"by_method":[{"name":k,"amount":round(v,2)} for k,v in sorted(methods.items(), key=lambda x:x[1], reverse=True) if v > 0],"by_status":[{"name":k,"amount":round(v,2)} for k,v in statuses.items()],"history":history}
 
 @router.get("/staff")
 def staff_report(
