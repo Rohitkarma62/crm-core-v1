@@ -59,6 +59,22 @@ def create_lead(payload: LeadCreate, db: Session = Depends(get_db), user: User =
     db.refresh(lead)
     return lead
 
+
+
+@router.get("/export")
+def export_leads_alias(
+    fmt: str = "csv",
+    search: str | None = None,
+    status: str | None = None,
+    priority: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    # Keep the original V1 /leads/export contract while the canonical
+    # import/export implementation remains under /imports/leads/export.
+    from .imports import export_leads
+    return export_leads(fmt=fmt, search=search, status=status, priority=priority, db=db, user=user)
+
 @router.get("/{lead_id}", response_model=LeadResponse)
 def get_lead(lead_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     lead = db.scalar(select(Lead).where(Lead.id == lead_id, Lead.business_id == user.business_id))
@@ -82,18 +98,3 @@ def delete_lead(lead_id: int, db: Session = Depends(get_db), user: User = Depend
     if not lead: raise HTTPException(404, "Lead not found")
     db.delete(lead)
     db.commit()
-
-
-@router.get("/export")
-def export_leads_alias(
-    fmt: str = "csv",
-    search: str | None = None,
-    status: str | None = None,
-    priority: str | None = None,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    # Keep the original V1 /leads/export contract while the canonical
-    # import/export implementation remains under /imports/leads/export.
-    from .imports import export_leads
-    return export_leads(fmt=fmt, search=search, status=status, priority=priority, db=db, user=user)
