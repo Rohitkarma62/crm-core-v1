@@ -11,6 +11,8 @@ export default function Sales({ onBack }) {
   const [paymentId, setPaymentId] = useState(null);
   const [payments, setPayments] = useState([]);
   const [paymentForm, setPaymentForm] = useState({ amount: "", payment_method: "upi", reference: "" });
+  const [salePaymentEnabled, setSalePaymentEnabled] = useState(false);
+  const [salePaymentsForm, setSalePaymentsForm] = useState([{ amount: "", payment_method: "upi", reference: "" }]);
 
   async function load() {
     setLoading(true);
@@ -41,6 +43,8 @@ export default function Sales({ onBack }) {
         amount: Number(form.amount),
       });
       setForm({ customer_id: "", amount: "", notes: "" });
+      setSalePaymentEnabled(false);
+      setSalePaymentsForm([{ amount: "", payment_method: "upi", reference: "" }]);
       await load();
     } catch (e) {
       setError(e.response?.data?.detail || "Unable to create sale");
@@ -83,6 +87,24 @@ export default function Sales({ onBack }) {
           </label>
           <label><span>Amount *</span><input required type="number" min="0.01" step="0.01" placeholder="₹ 0.00" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })}/></label>
           <label className="full-field"><span>Notes</span><input placeholder="Optional notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}/></label>
+          <div className="full-field sale-payment-capture">
+            <div className="sale-payment-toggle">
+              <label><input type="checkbox" checked={salePaymentEnabled} onChange={e => setSalePaymentEnabled(e.target.checked)} /> Payment received at sale time</label>
+              <span>Sale create karte waqt payment ka record yahin add karein.</span>
+            </div>
+            {salePaymentEnabled && <div className="initial-payments">
+              {salePaymentsForm.map((p, index) => <div className="initial-payment-row" key={index}>
+                <input type="number" min="0.01" step="0.01" placeholder="Amount" value={p.amount} onChange={e => setSalePaymentsForm(rows => rows.map((r,i) => i === index ? {...r, amount:e.target.value} : r))} />
+                <select value={p.payment_method} onChange={e => setSalePaymentsForm(rows => rows.map((r,i) => i === index ? {...r, payment_method:e.target.value} : r))}>
+                  <option value="upi">UPI</option><option value="cash">Cash</option><option value="cheque">Cheque</option><option value="card">Card</option><option value="bank_transfer">Bank Transfer</option><option value="other">Other</option>
+                </select>
+                <input placeholder="UTR / Cheque No. / Reference" value={p.reference} onChange={e => setSalePaymentsForm(rows => rows.map((r,i) => i === index ? {...r, reference:e.target.value} : r))} />
+                {salePaymentsForm.length > 1 && <button type="button" className="small danger" onClick={() => setSalePaymentsForm(rows => rows.filter((_,i) => i !== index))}>Remove</button>}
+              </div>)}
+              <button type="button" className="small" onClick={() => setSalePaymentsForm(rows => [...rows, {amount:"", payment_method:"upi", reference:""}])}>+ Add Payment Method</button>
+              <div className="initial-payment-total">Initial payment: ₹{salePaymentsForm.reduce((sum,p) => sum + Number(p.amount || 0), 0).toLocaleString("en-IN", {minimumFractionDigits:2})} / Sale: ₹{Number(form.amount || 0).toLocaleString("en-IN", {minimumFractionDigits:2})}</div>
+            </div>}
+          </div>
           <div className="form-actions"><button type="submit" disabled={saving || loading}>{saving ? "Creating Sale..." : "Create Sale"}</button></div>
         </form>
         {error && <p className="error">{error}</p>}
