@@ -16,7 +16,7 @@ export default function Dashboard({ onLogout, onEnquiries, onPipeline, onQuotati
   async function load(){
     setLoading(true);setError("");
     try{
-      const [o,c,l]=await Promise.all([
+      const [o,c,l,e]=await Promise.all([
         api.get("/api/v1/fabrication"),
         api.get("/api/v1/customers"),
         api.get("/api/v1/leads"),
