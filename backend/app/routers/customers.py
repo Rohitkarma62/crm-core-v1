@@ -5,6 +5,7 @@ from ..database import get_db
 from ..dependencies import get_current_user
 from ..models.core import User
 from ..models.crm import Activity, Customer, Lead, LeadStatus, Sale, Payment
+from ..models.billing import Invoice, Receipt, PaymentProof
 from ..schemas.customers import CustomerCreate, CustomerListResponse, CustomerResponse, CustomerUpdate
 
 router = APIRouter(prefix="/api/v1/customers", tags=["Customers"])
@@ -67,6 +68,27 @@ def create_customer(payload: CustomerCreate, db: Session = Depends(get_db), user
     db.add(customer)
     db.commit(); db.refresh(customer)
     return customer
+
+@router.get("/{customer_id}/profile")
+def customer_profile(customer_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    customer = get_customer_or_404(customer_id, user, db)
+    sales = db.scalars(select(Sale).where(Sale.customer_id == customer.id, Sale.business_id == user.business_id).order_by(Sale.sale_date.desc())).all()
+    payments = db.scalars(select(Payment).where(Payment.customer_id == customer.id, Payment.business_id == user.business_id).order_by(Payment.payment_date.desc())).all()
+    invoices = db.scalars(select(Invoice).join(Sale, Invoice.sale_id == Sale.id).where(Invoice.business_id == user.business_id, Sale.customer_id == customer.id).order_by(Invoice.created_at.desc())).all()
+    receipts = db.scalars(select(Receipt).join(Payment, Receipt.payment_id == Payment.id).where(Receipt.business_id == user.business_id, Payment.customer_id == customer.id)).all()
+    proofs = db.scalars(select(PaymentProof).join(Payment, PaymentProof.payment_id == Payment.id).where(PaymentProof.business_id == user.business_id, Payment.customer_id == customer.id).order_by(PaymentProof.uploaded_at.desc())).all()
+    completed = [p for p in payments if p.status == "completed"]
+    total_sales = sum((s.amount for s in sales), start=0)
+    collected = sum((p.amount for p in completed), start=0)
+    return {
+        "customer": CustomerResponse.model_validate(customer),
+        "summary": {"total_sales": total_sales, "collected": collected, "outstanding": max(total_sales - collected, 0), "payment_count": len(payments), "invoice_count": len(invoices)},
+        "sales": sales,
+        "payments": payments,
+        "invoices": invoices,
+        "receipts": receipts,
+        "proofs": [{"id": p.id, "payment_id": p.payment_id, "filename": p.filename, "content_type": p.content_type, "uploaded_at": p.uploaded_at} for p in proofs],
+    }
 
 @router.get("/{customer_id}", response_model=CustomerResponse)
 def get_customer(customer_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
