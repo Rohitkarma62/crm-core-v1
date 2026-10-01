@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { api } from "../services/api";\n\nconst money = (v) => `₹${Number(v || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+import { api } from "../services/api";
+
+const money = (v) => `₹${Number(v || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
 export default function Customers({ onBack, onProfile }) {
   const [customers, setCustomers] = useState([]);
@@ -8,7 +10,8 @@ export default function Customers({ onBack, onProfile }) {
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);\n  const [expanded, setExpanded] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [expanded, setExpanded] = useState(null);
 
   async function load() {
     setLoading(true);
