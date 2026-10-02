@@ -6,7 +6,22 @@ const blank={date:localDate(),category:"Material",title:"",amount:"",payment_met
 export default function Expenses({onBack}){
  const [items,setItems]=useState([]),[orders,setOrders]=useState([]),[employees,setEmployees]=useState([]),[attendance,setAttendance]=useState([]);
  const [form,setForm]=useState(blank),[salary,setSalary]=useState({employee_id:"",date:localDate(),days:"1",status:"present",payment_method:"Cash",notes:""}),[total,setTotal]=useState(0),[error,setError]=useState("");
- async function load(){try{const [e,o,a,x]=await Promise.all([api.get("/api/v1/workshop-finance/expenses"),api.get("/api/v1/fabrication"),api.get("/api/v1/workshop-finance/employees"),api.get("/api/v1/workshop-finance/attendance")]);setItems(e.data.items||[]);setTotal(e.data.total||0);setOrders(o.data.items||[]);setEmployees(x.data.items||[]);setAttendance(a.data.items||[])}catch(e){setError(e.response?.data?.detail||"Expenses load nahi hue.")}}
+ async function load(){
+  setError("");
+  const results=await Promise.allSettled([
+    api.get("/api/v1/workshop-finance/expenses"),
+    api.get("/api/v1/fabrication"),
+    api.get("/api/v1/workshop-finance/employees"),
+    api.get("/api/v1/workshop-finance/attendance")
+  ]);
+  const [e,o,x,a]=results;
+  if(e.status==="fulfilled"){setItems(e.value.data.items||[]);setTotal(e.value.data.total||0)}
+  if(o.status==="fulfilled") setOrders(o.value.data.items||[]);
+  if(x.status==="fulfilled") setEmployees(x.value.data.items||[]);
+  if(a.status==="fulfilled") setAttendance(a.value.data.items||[]);
+  const failed=results.find(r=>r.status==="rejected");
+  if(failed && !x.status==="fulfilled" && !a.status==="fulfilled") setError("Employee data load nahi hua.");
+}
  useEffect(()=>{load()},[]);
  async function addExpense(e){e.preventDefault();try{await api.post("/api/v1/workshop-finance/expenses",form);setForm(blank);load()}catch(e){setError(e.response?.data?.detail||"Expense save nahi hua.")}}
  async function addSalary(e){e.preventDefault();if(!salary.employee_id){setError("Employee select karein.");return}try{await api.post("/api/v1/workshop-finance/attendance",salary);setSalary({...salary,days:"1",notes:""});load()}catch(e){setError(e.response?.data?.detail||"Salary entry save nahi hui.")}}
