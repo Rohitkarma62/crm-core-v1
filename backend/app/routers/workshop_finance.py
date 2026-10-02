@@ -14,6 +14,41 @@ CATEGORIES = ["Material","Labour","Salary","Transport","Electricity","Rent","Too
 def employee_row(e):
     return {"id":e.id,"name":e.name,"phone":e.phone,"role":e.role,"wage_type":e.wage_type,"wage_amount":float(e.wage_amount or 0),"active":e.active}
 
+def employee_fallback_rows(db, business_id):
+    employees = db.scalars(select(Employee).where(Employee.business_id == business_id)).all()
+    by_id = {e.id: employee_row(e) for e in employees}
+    attendance_rows = db.scalars(
+        select(EmployeeAttendance)
+        .where(EmployeeAttendance.business_id == business_id)
+        .order_by(EmployeeAttendance.work_date.desc())
+        .limit(200)
+    ).all()
+    for a in attendance_rows:
+        if a.employee_id in by_id:
+            continue
+        exp = db.scalar(
+            select(WorkshopExpense)
+            .where(
+                WorkshopExpense.business_id == business_id,
+                WorkshopExpense.employee_id == a.employee_id,
+                WorkshopExpense.category == "Salary",
+            )
+            .order_by(WorkshopExpense.expense_date.desc())
+        )
+        name = (exp.title.replace("Salary - ", "", 1).strip() if exp and exp.title else f"Majdur #{a.employee_id}")
+        wage = float((a.amount or 0) / (a.days or 1))
+        by_id[a.employee_id] = {
+            "id": a.employee_id,
+            "name": name,
+            "phone": None,
+            "role": "Majdur",
+            "wage_type": "daily",
+            "wage_amount": wage,
+            "active": True,
+            "recovered": True,
+        }
+    return list(by_id.values())
+
 def attendance_row(a, employee=None):
     return {
         "id": a.id,
@@ -30,8 +65,7 @@ def attendance_row(a, employee=None):
 
 @router.get("/employees")
 def employees(db: Session=Depends(get_db), user: User=Depends(get_current_user)):
-    rows=db.scalars(select(Employee).where(Employee.business_id==user.business_id).order_by(Employee.active.desc(),Employee.name)).all()
-    return {"items":[employee_row(x) for x in rows]}
+    return {"items": employee_fallback_rows(db, user.business_id)}
 
 @router.post("/employees")
 def add_employee(payload: dict, db: Session=Depends(get_db), user: User=Depends(get_current_user)):
