@@ -10,6 +10,9 @@ export default function FabricationPipeline({ onBack, onEnquiries }) {
   const [error,setError]=useState("");
   const [dragged,setDragged]=useState(null);
   const [activeStage,setActiveStage]=useState(stages[0]);
+  const [assistantOpen,setAssistantOpen]=useState(false);
+  const [workingId,setWorkingId]=useState(null);
+  const [draft,setDraft]=useState({measurement:"",amount:""});
 
   async function load(){
     setLoading(true);setError("");
@@ -20,21 +23,14 @@ export default function FabricationPipeline({ onBack, onEnquiries }) {
       ]);
       const fabricationOrders=o.data.items||[];
       const allLeads=l.data.items||[];
-
-      // Once an enquiry has been converted into a Work Order, it must not
-      // come back as a fresh "New Enquiry" after refresh.
       const convertedLeadIds=new Set(
-        fabricationOrders
-          .map(order=>order.lead_id)
-          .filter(id=>id !== null && id !== undefined)
-          .map(Number)
+        fabricationOrders.map(order=>order.lead_id)
+          .filter(id=>id !== null && id !== undefined).map(Number)
       );
       const openLeads=allLeads.filter(lead=>!convertedLeadIds.has(Number(lead.id)));
-
       setOrders(fabricationOrders);
       setLeads(openLeads);
-    }
-    catch(e){setError(e.response?.data?.detail||"Pipeline load nahi hua.");}
+    }catch(e){setError(e.response?.data?.detail||"Pipeline load nahi hua.");}
     finally{setLoading(false);}
   }
   useEffect(()=>{load()},[]);
@@ -58,19 +54,112 @@ export default function FabricationPipeline({ onBack, onEnquiries }) {
     }catch(e){setError(e.response?.data?.detail||"Job move nahi hua.");}
   }
 
+  async function completeMeasurement(order){
+    if(!draft.measurement.trim()){
+      setError("Measurement bharna zaroori hai. Example: 12 x 6 ft");
+      return;
+    }
+    setWorkingId(order.id);setError("");
+    try{
+      const {data}=await api.put(`/api/v1/fabrication/${order.id}`,{
+        measurement:draft.measurement.trim(), stage:"Quotation"
+      });
+      setOrders(v=>v.map(o=>o.id===order.id?data:o));
+      setDraft({measurement:"",amount:""});
+      setWorkingId(null);
+    }catch(e){
+      setError(e.response?.data?.detail||"Measurement save nahi hua.");
+      setWorkingId(null);
+    }
+  }
+
+  async function completeQuotation(order){
+    const amount=String(draft.amount).trim();
+    if(!amount || Number(amount)<0){
+      setError("Quotation amount bharna zaroori hai.");
+      return;
+    }
+    setWorkingId(order.id);setError("");
+    try{
+      const {data}=await api.put(`/api/v1/fabrication/${order.id}`,{
+        amount:Number(amount), stage:"Material Pending"
+      });
+      setOrders(v=>v.map(o=>o.id===order.id?data:o));
+      setDraft({measurement:"",amount:""});
+      setWorkingId(null);
+    }catch(e){
+      setError(e.response?.data?.detail||"Quotation save nahi hua.");
+      setWorkingId(null);
+    }
+  }
+
+  function startAssistant(){
+    setAssistantOpen(true);
+    setError("");
+    const pending=orders.find(o=>o.stage==="Measurement" || o.stage==="Quotation");
+    if(pending){
+      setDraft({
+        measurement:pending.measurement||"",
+        amount:pending.amount?String(pending.amount):""
+      });
+    }else{
+      setDraft({measurement:"",amount:""});
+    }
+  }
+
   const cardsByStage=useMemo(()=>{
     const result=Object.fromEntries(stages.map(s=>[s,orders.filter(o=>o.stage===s)]));
-    result["New Enquiry"]=[...leads.map(l=>({id:`lead-${l.id}`,customer:l.name,phone:l.phone,work:l.interested_service||"Fabrication enquiry",amount:l.estimated_value||0,stage:"New Enquiry",leadOnly:true})),...result["New Enquiry"]];
+    result["New Enquiry"]=[
+      ...leads.map(l=>({id:`lead-${l.id}`,customer:l.name,phone:l.phone,work:l.interested_service||"Fabrication enquiry",amount:l.estimated_value||0,stage:"New Enquiry",leadOnly:true})),
+      ...result["New Enquiry"]
+    ];
     return result;
   },[orders,leads]);
+
   const counts=useMemo(()=>Object.fromEntries(stages.map(s=>[s,cardsByStage[s].length])),[cardsByStage]);
+  const pendingJobs=useMemo(()=>[
+    ...leads.map(l=>({kind:"enquiry",id:`lead-${l.id}`,customer:l.name,phone:l.phone,work:l.interested_service||"Fabrication enquiry",amount:l.estimated_value||0})),
+    ...orders.filter(o=>["Measurement","Quotation"].includes(o.stage)).map(o=>({kind:o.stage==="Measurement"?"measurement":"quotation",...o}))
+  ],[orders,leads]);
 
   return <main className="page pipeline-page fabrication-pipeline-page">
     <div className="page-head pipeline-head">
       <div><button className="secondary" onClick={onBack}>← Dashboard</button><h1>🔄 Fabrication Pipeline</h1><p className="form-help">Har job ko enquiry se delivery tak drag/drop ya stage menu se move karein.</p></div>
-      <div className="pipeline-head-actions"><button className="secondary" onClick={load}>↻ Refresh</button><button className="primary" onClick={onEnquiries}>+ New Enquiry</button></div>
+      <div className="pipeline-head-actions">
+        <button className="secondary" onClick={load}>↻ Refresh</button>
+        <button className="secondary" onClick={startAssistant}>🧭 Pending Work</button>
+        <button className="primary" onClick={onEnquiries}>+ New Enquiry</button>
+      </div>
     </div>
     {error&&<p className="error">{error}</p>}
+
+    {assistantOpen&&<section className="panel pending-assistant">
+      <div className="toolbar">
+        <div><h2>🧭 Pending Work Assistant</h2><span className="record-count">{pendingJobs.length} pending work</span></div>
+        <button className="secondary" onClick={()=>setAssistantOpen(false)}>Close</button>
+      </div>
+      <p className="form-help">System har pending job ka next step batayega. Pehle Enquiry → Measurement, phir Measurement → Quotation complete karein.</p>
+      {!pendingJobs.length?<div className="table-state">Koi pending work nahi hai. Pipeline clean hai.</div>:
+      <div className="pending-work-list">{pendingJobs.map(job=>{
+        const isMeasurement=job.kind==="measurement";
+        const isQuotation=job.kind==="quotation";
+        const isEnquiry=job.kind==="enquiry";
+        return <article className="pending-work-card" key={job.id}>
+          <div><strong>{job.customer}</strong><small>{job.phone||"No mobile"} · {job.work}</small></div>
+          <span className="priority">{isEnquiry?"1. Measurement":isMeasurement?"2. Quotation":"3. Approve / Material"}</span>
+          {isEnquiry&&<button className="small" onClick={()=>{move(job.id,"Measurement");setActiveStage("Measurement");}}>Create Work Order → Measurement</button>}
+          {isMeasurement&&<div className="pending-form">
+            <label><span>Measurement *</span><input value={draft.measurement} onChange={e=>setDraft({...draft,measurement:e.target.value})} placeholder="Example: 12 x 6 ft"/></label>
+            <button className="small" disabled={workingId===job.id} onClick={()=>completeMeasurement(job)}>{workingId===job.id?"Saving...":"Save Measurement → Quotation"}</button>
+          </div>}
+          {isQuotation&&<div className="pending-form">
+            <label><span>Quotation Amount *</span><input type="number" value={draft.amount} onChange={e=>setDraft({...draft,amount:e.target.value})} placeholder="₹ Amount"/></label>
+            <button className="small" disabled={workingId===job.id} onClick={()=>completeQuotation(job)}>{workingId===job.id?"Saving...":"Approve → Material Pending"}</button>
+          </div>}
+        </article>;
+      })}</div>}
+    </section>}
+
     {loading?<section className="panel"><div className="table-state">Loading pipeline...</div></section>:<>
       <section className="panel pipeline-stage-tabs"><div className="pipeline-tabs-scroll">{stages.map(s=><button key={s} className={`stage-tab ${activeStage===s?"active":""}`} onClick={()=>setActiveStage(s)}><span>{s}</span><b>{counts[s]}</b></button>)}</div></section>
       <section className="pipeline-board fabrication-pipeline-board">
