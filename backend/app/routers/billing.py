@@ -5,7 +5,11 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..dependencies import get_current_user
 from ..models.core import Business, User, Role
-from ..models.crm import Activity, Customer, FollowUp, ImportJob, Lead, LeadSource, LeadStatus, Payment, Sale
+from ..models.crm import (
+    Activity, Customer, FollowUp, ImportJob, Lead, LeadSource, LeadStatus,
+    Payment, Sale, FabricationOrder, Employee, EmployeeAttendance,
+    WorkshopExpense, WorkshopMaterial, WorkshopMaterialTxn, WorkshopPayment,
+)
 from ..models.billing import BusinessAsset, Invoice, PaymentProof, Receipt
 
 router = APIRouter(prefix="/api/v1/billing", tags=["Billing & Documents"])
@@ -50,25 +54,41 @@ def require_admin(user: User, db: Session):
 
 @router.delete("/company/clear-data")
 def clear_company_crm_data(db: Session=Depends(get_db), user: User=Depends(get_current_user)):
-    """Delete all CRM/customer/financial/import data for the current business, preserving the account and company settings."""
+    """Delete all business/customer/workshop data while preserving login, company settings and branding."""
     require_admin(user, db)
     bid = user.business_id
 
-    # Delete deepest dependent records first so SQLite/Postgres foreign keys remain valid.
-    payment_ids = list(db.scalars(select(Payment.id).where(Payment.business_id == bid)).all())
-    sale_ids = list(db.scalars(select(Sale.id).where(Sale.business_id == bid)).all())
+    delete_order = (
+        PaymentProof,
+        Receipt,
+        Invoice,
+        Payment,
+        WorkshopMaterialTxn,
+        WorkshopPayment,
+        WorkshopExpense,
+        EmployeeAttendance,
+        FollowUp,
+        Activity,
+        Sale,
+        ImportJob,
+        WorkshopMaterial,
+        Employee,
+        FabricationOrder,
+        Customer,
+        Lead,
+        LeadSource,
+        LeadStatus,
+    )
 
-    if payment_ids:
-        db.query(PaymentProof).filter(PaymentProof.business_id == bid).delete(synchronize_session=False)
-        db.query(Receipt).filter(Receipt.business_id == bid).delete(synchronize_session=False)
-    if sale_ids:
-        db.query(Invoice).filter(Invoice.business_id == bid).delete(synchronize_session=False)
+    try:
+        for model in delete_order:
+            db.query(model).filter(model.business_id == bid).delete(synchronize_session=False)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Data clear failed: {exc}")
 
-    for model in (Payment, Sale, WorkshopExpense, EmployeeAttendance, FabricationOrder, Employee, Activity, FollowUp, Customer, ImportJob, Lead, LeadSource, LeadStatus):
-        db.query(model).filter(model.business_id == bid).delete(synchronize_session=False)
-
-    db.commit()
-    return {"message": "All CRM data cleared. Business account and company settings were preserved."}
+    return {"message": "All CRM and workshop data cleared. Business account, login and company settings were preserved."}
 
 def sale_or_404(sale_id,user,db):
     s=db.scalar(select(Sale).where(Sale.id==sale_id,Sale.business_id==user.business_id))
