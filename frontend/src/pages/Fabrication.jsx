@@ -16,8 +16,8 @@ export default function Fabrication({ onBack, onPipeline }) {
 
   async function load(){
     try{
-      const [l,c,o]=await Promise.all([api.get("/api/v1/leads"),api.get("/api/v1/customers",{params:{page_size:100}}),api.get("/api/v1/fabrication")]);
-      setLeads(l.data.items||[]); setCustomers(c.data.items||[]); setOrders(o.data.items||[]);
+      const [l,ac,o]=await Promise.all([api.get("/api/v1/leads"),api.get("/api/v1/fabrication/available-customers"),api.get("/api/v1/fabrication")]);
+      setLeads(l.data.items||[]); setCustomers(ac.data.items||[]); setOrders(o.data.items||[]);
     }catch(e){setError(e.response?.data?.detail||"Workshop data load nahi ho saka.");}
   }
   useEffect(()=>{load()},[]);
@@ -33,7 +33,11 @@ export default function Fabrication({ onBack, onPipeline }) {
     e.preventDefault(); setSaving(true); setError("");
     if(!form.customer||!form.work){setError("Customer aur work requirement bharna zaroori hai.");setSaving(false);return}
     try{
-      const payload={...form,customer_id:form.customer_id?Number(form.customer_id):null};
+      const selected=customers.find(x=>String(x.id)===String(form.customer_id));
+      const payload={...form,
+        customer_id:selected?.type==="customer"?Number(selected.id):null,
+        lead_id:selected?.type==="enquiry"?Number(selected.id):(selected?.lead_id?Number(selected.lead_id):null)
+      };
       const r=await api.post("/api/v1/fabrication",payload);
       setOrders(v=>[r.data,...v]); setForm(emptyOrder);
     }catch(e){setError(e.response?.data?.detail||"Work order save nahi hua.");}
@@ -73,7 +77,10 @@ export default function Fabrication({ onBack, onPipeline }) {
       <h2>+ New Fabrication Work Order</h2>
       <p className="form-help">Customer, site, measurement aur kaam ki details save karein.</p>
       <form className="form-grid fab-form" onSubmit={addOrder}>
-        <label><span>Existing Customer</span><select value={form.customer_id} onChange={e=>{const id=e.target.value;const c=customers.find(x=>String(x.id)===id);setForm({...form,customer_id:id,customer:c?.name||form.customer,phone:c?.phone||form.phone})}}><option value="">Select existing customer</option>{customers.map(c=><option key={c.id} value={c.id}>{c.name} · {c.phone}</option>)}</select></label><label><span>Customer Name *</span><input value={form.customer} onChange={e=>setForm({...form,customer:e.target.value})} placeholder="Customer name" required/></label>
+        <label><span>Existing Customer / Enquiry</span><select value={form.customer_id} onChange={e=>{const id=e.target.value;const c=customers.find(x=>String(x.id)===id);setForm({...form,customer_id:id,customer:c?.name||form.customer,phone:c?.phone||form.phone,work:c?.work||form.work,amount:c?.amount||form.amount})}}>
+<option value="">Select customer / enquiry</option>
+{customers.map(c=><option key={c.type+"-"+c.id} value={c.id}>{c.type==="enquiry"?"📋 Enquiry: ":"👤 Customer: "}{c.name} · {c.phone}</option>)}
+</select></label><label><span>Customer Name *</span><input value={form.customer} onChange={e=>setForm({...form,customer:e.target.value})} placeholder="Customer name" required/></label>
         <label><span>Mobile</span><input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} placeholder="Mobile number"/></label>
         <label><span>Site / Location</span><input value={form.site} onChange={e=>setForm({...form,site:e.target.value})} placeholder="Site address"/></label>
         <label><span>Work Requirement *</span><input value={form.work} onChange={e=>setForm({...form,work:e.target.value})} placeholder="Gate / Grill / Shed / Railing" required/></label>
