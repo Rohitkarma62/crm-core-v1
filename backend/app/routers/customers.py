@@ -32,8 +32,22 @@ def customer_response(customer: Customer, db: Session):
         .order_by(Payment.payment_date.desc())
     ).all()
 
-    fabrication_orders = db.scalars(select(FabricationOrder).where(FabricationOrder.customer_id == customer.id, FabricationOrder.business_id == customer.business_id)).all()
-    workshop_payments = db.scalars(select(WorkshopPayment).where(WorkshopPayment.customer_id == customer.id, WorkshopPayment.business_id == customer.business_id)).all()
+    # Include older work orders that may not have customer_id linked yet, using the customer's phone.
+    order_conditions = [FabricationOrder.customer_id == customer.id]
+    if customer.phone:
+        order_conditions.append(FabricationOrder.phone == customer.phone)
+    fabrication_orders = db.scalars(
+        select(FabricationOrder).where(FabricationOrder.business_id == customer.business_id, or_(*order_conditions))
+    ).all()
+    work_order_ids = [o.id for o in fabrication_orders]
+    workshop_payments = db.scalars(
+        select(WorkshopPayment).where(
+            WorkshopPayment.business_id == customer.business_id,
+            or_(WorkshopPayment.customer_id == customer.id, WorkshopPayment.work_order_id.in_(work_order_ids))
+        )
+    ).all() if work_order_ids else db.scalars(
+        select(WorkshopPayment).where(WorkshopPayment.customer_id == customer.id, WorkshopPayment.business_id == customer.business_id)
+    ).all()
     total_sales = sum(float(s.amount or 0) for s in sales) + sum(float(o.amount or 0) for o in fabrication_orders)
     completed = [p for p in payments if p.status == "completed"]
     collected = sum(float(p.amount or 0) for p in completed) + sum(float(p.amount or 0) for p in workshop_payments)
@@ -237,8 +251,17 @@ def customer_profile(
         .where(PaymentProof.business_id == user.business_id, Payment.customer_id == customer.id)
         .order_by(PaymentProof.uploaded_at.desc())
     ).all()
-    fabrication_orders = db.scalars(select(FabricationOrder).where(FabricationOrder.customer_id == customer.id, FabricationOrder.business_id == user.business_id)).all()
-    workshop_payments = db.scalars(select(WorkshopPayment).where(WorkshopPayment.customer_id == customer.id, WorkshopPayment.business_id == user.business_id).order_by(WorkshopPayment.payment_date.desc())).all()
+    order_conditions = [FabricationOrder.customer_id == customer.id]
+    if customer.phone:
+        order_conditions.append(FabricationOrder.phone == customer.phone)
+    fabrication_orders = db.scalars(select(FabricationOrder).where(FabricationOrder.business_id == user.business_id, or_(*order_conditions))).all()
+    work_order_ids = [o.id for o in fabrication_orders]
+    workshop_payments = db.scalars(
+        select(WorkshopPayment).where(
+            WorkshopPayment.business_id == user.business_id,
+            or_(WorkshopPayment.customer_id == customer.id, WorkshopPayment.work_order_id.in_(work_order_ids))
+        ).order_by(WorkshopPayment.payment_date.desc())
+    ).all() if work_order_ids else db.scalars(select(WorkshopPayment).where(WorkshopPayment.customer_id == customer.id, WorkshopPayment.business_id == user.business_id)).all()
     completed = [p for p in payments if p.status == "completed"]
     total_sales = sum((s.amount for s in sales), start=0) + sum((o.amount for o in fabrication_orders), start=0)
     collected = sum((p.amount for p in completed), start=0) + sum((p.amount for p in workshop_payments), start=0)
