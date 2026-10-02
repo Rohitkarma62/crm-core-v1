@@ -45,6 +45,25 @@ def material_transaction(material_id:int,payload:dict,db:Session=Depends(get_db)
     t=WorkshopMaterialTxn(business_id=user.business_id,material_id=m.id,work_order_id=wid,txn_type=typ,qty=qty,rate=rate,notes=payload.get("notes"),txn_date=datetime.fromisoformat(payload["date"]) if payload.get("date") else datetime.utcnow())
     db.add(t);db.commit();db.refresh(m);return material_row(m)
 
+@router.get("/work-order/{work_order_id}")
+def work_order_materials(work_order_id:int,db:Session=Depends(get_db),user:User=Depends(get_current_user)):
+    if not db.scalar(select(FabricationOrder.id).where(FabricationOrder.id==work_order_id,FabricationOrder.business_id==user.business_id)):
+        raise HTTPException(404,"Work order not found")
+    rows=db.scalars(select(WorkshopMaterialTxn).where(
+        WorkshopMaterialTxn.work_order_id==work_order_id,
+        WorkshopMaterialTxn.business_id==user.business_id,
+        WorkshopMaterialTxn.txn_type=="out"
+    ).order_by(WorkshopMaterialTxn.txn_date.desc())).all()
+    material_ids={x.material_id for x in rows}
+    names={}
+    if material_ids:
+        mats=db.scalars(select(WorkshopMaterial).where(
+            WorkshopMaterial.id.in_(material_ids),
+            WorkshopMaterial.business_id==user.business_id
+        )).all()
+        names={m.id:m.name for m in mats}
+    return {"items":[{"id":x.id,"material_id":x.material_id,"material_name":names.get(x.material_id,"Material"),"qty":float(x.qty or 0),"unit_rate":float(x.rate or 0),"date":x.txn_date.date().isoformat(),"notes":x.notes} for x in rows]}
+
 @router.get("/{material_id}/transactions")
 def material_transactions(material_id:int,db:Session=Depends(get_db),user:User=Depends(get_current_user)):
     m=db.scalar(select(WorkshopMaterial.id).where(WorkshopMaterial.id==material_id,WorkshopMaterial.business_id==user.business_id))
