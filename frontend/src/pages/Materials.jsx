@@ -2,14 +2,35 @@ import React,{useEffect,useState} from "react";
 import {api} from "../services/api";
 const money=v=>`₹${Number(v||0).toLocaleString("en-IN",{maximumFractionDigits:0})}`;
 const FABRICATION_MATERIALS=[
- ["MS Square Pipe 1x1","ft"],["MS Square Pipe 1.5x1.5","ft"],["MS Square Pipe 2x2","ft"],["MS Rectangular Pipe 2x1","ft"],["MS Rectangular Pipe 3x1.5","ft"],
- ["MS Angle 1x1","ft"],["MS Angle 1.5x1.5","ft"],["MS Angle 2x2","ft"],["MS Flat Patti 1 inch","ft"],["MS Flat Patti 1.5 inch","ft"],
- ["MS Sheet 18 Gauge","sqft"],["MS Sheet 20 Gauge","sqft"],["MS Sheet 22 Gauge","sqft"],["MS Sheet 24 Gauge","sqft"],["MS Plate 3mm","sqft"],["MS Plate 5mm","sqft"],
- ["Round Pipe 1 inch","ft"],["Round Pipe 1.5 inch","ft"],["Round Pipe 2 inch","ft"],["GI Pipe 1 inch","ft"],["GI Pipe 1.5 inch","ft"],
+ // Structural pipes
+ ["MS Square Pipe 20x20 (3/4x3/4)","ft"],["MS Square Pipe 25x25 (1x1)","ft"],["MS Square Pipe 32x32 (1.25x1.25)","ft"],["MS Square Pipe 40x40 (1.5x1.5)","ft"],["MS Square Pipe 50x50 (2x2)","ft"],["MS Square Pipe 75x75 (3x3)","ft"],["MS Square Pipe 100x100 (4x4)","ft"],
+ ["MS Rectangular Pipe 40x20","ft"],["MS Rectangular Pipe 50x25","ft"],["MS Rectangular Pipe 60x40","ft"],["MS Rectangular Pipe 80x40","ft"],["MS Rectangular Pipe 100x50","ft"],
+ ["MS Round Pipe 3/4 inch","ft"],["MS Round Pipe 1 inch","ft"],["MS Round Pipe 1.25 inch","ft"],["MS Round Pipe 1.5 inch","ft"],["MS Round Pipe 2 inch","ft"],["MS Round Pipe 2.5 inch","ft"],["MS Round Pipe 3 inch","ft"],
+ // Angles, channels and purlins
+ ["MS Angle 1x1","ft"],["MS Angle 1.5x1.5","ft"],["MS Angle 2x2","ft"],["MS Angle 2.5x2.5","ft"],["MS Angle 3x3","ft"],
+ ["MS Flat Patti 1 inch","ft"],["MS Flat Patti 1.5 inch","ft"],["MS Flat Patti 2 inch","ft"],["MS Flat Patti 3 inch","ft"],
+ ["MS Channel 2 inch","ft"],["MS Channel 3 inch","ft"],["MS Channel 4 inch","ft"],["MS Channel 5 inch","ft"],["MS Channel 6 inch","ft"],
+ ["C Purlin 80mm","ft"],["C Purlin 100mm","ft"],["C Purlin 120mm","ft"],["C Purlin 150mm","ft"],["C Purlin 200mm","ft"],
+ ["Z Purlin 100mm","ft"],["Z Purlin 120mm","ft"],["Z Purlin 150mm","ft"],["Z Purlin 200mm","ft"],
+ // Roofing sheets and accessories
+ ["GI Roofing Sheet 0.35mm","sqft"],["GI Roofing Sheet 0.40mm","sqft"],["GI Roofing Sheet 0.45mm","sqft"],["GI Roofing Sheet 0.50mm","sqft"],
+ ["Color Coated Roofing Sheet 0.35mm","sqft"],["Color Coated Roofing Sheet 0.40mm","sqft"],["Color Coated Roofing Sheet 0.45mm","sqft"],
+ ["PPGI Roofing Sheet","sqft"],["Polycarbonate Roofing Sheet","sqft"],["Roofing Ridge Cap","ft"],["Roofing Flashing","ft"],["Roof Gutter","ft"],["Down Pipe","ft"],
+ ["Roofing J Bolt","pcs"],["Self Drilling Roofing Screw","pcs"],["Roofing Washer","pcs"],["Rubber Washer","pcs"],
+ // Plates and fabrication hardware
+ ["MS Sheet 18 Gauge","sqft"],["MS Sheet 20 Gauge","sqft"],["MS Sheet 22 Gauge","sqft"],["MS Sheet 24 Gauge","sqft"],["MS Sheet 26 Gauge","sqft"],
+ ["MS Plate 3mm","sqft"],["MS Plate 5mm","sqft"],["MS Plate 6mm","sqft"],["MS Plate 8mm","sqft"],["MS Plate 10mm","sqft"],
+ ["Base Plate","pcs"],["Gusset Plate","pcs"],["Cleat Angle","pcs"],["MS Bracket","pcs"],["MS Clamp","pcs"],
+ ["GI Pipe 1 inch","ft"],["GI Pipe 1.5 inch","ft"],["GI Pipe 2 inch","ft"],["GI Pipe 2.5 inch","ft"],["GI Pipe 3 inch","ft"],
  ["SS Pipe 1 inch","ft"],["SS Pipe 1.5 inch","ft"],["SS Pipe 2 inch","ft"],["SS Sheet 18 Gauge","sqft"],["SS Sheet 20 Gauge","sqft"],
- ["Welding Rod 2.5mm","kg"],["Welding Rod 3.15mm","kg"],["Welding Rod 4mm","kg"],["MIG Wire","kg"],["Cutting Disc 4 inch","pcs"],["Cutting Disc 7 inch","pcs"],
- ["Grinding Disc 4 inch","pcs"],["Grinding Disc 7 inch","pcs"],["Drill Bit Set","set"],["Nut Bolt Set","set"],["Anchor Fastener","pcs"],
- ["Hinges","pcs"],["Door Lock","pcs"],["Tower Bolt","pcs"],["Paint","ltr"],["Primer","ltr"],["Thinner","ltr"],["Putty","kg"],["Sand Paper","pcs"]
+ ["Nut Bolt Set","set"],["Anchor Fastener","pcs"],["Rawl Anchor","pcs"],["Hinges","pcs"],["Door Lock","pcs"],["Tower Bolt","pcs"],
+ // Welding, cutting and consumables
+ ["Welding Rod 2.5mm","kg"],["Welding Rod 3.15mm","kg"],["Welding Rod 4mm","kg"],["MIG Wire","kg"],["Welding Gas","kg"],
+ ["Cutting Disc 4 inch","pcs"],["Cutting Disc 7 inch","pcs"],["Cutting Disc 14 inch","pcs"],["Grinding Disc 4 inch","pcs"],["Grinding Disc 7 inch","pcs"],["Flap Disc","pcs"],["Drill Bit Set","set"],
+ // Paint and finishing
+ ["Red Oxide Primer","ltr"],["Zinc Primer","ltr"],["Metal Primer","ltr"],["Paint","ltr"],["Enamel Paint","ltr"],["Thinner","ltr"],["Putty","kg"],["Sand Paper","pcs"],["Wire Brush","pcs"],
+ // Shed insulation and rain protection
+ ["Roof Insulation Sheet","sqft"],["Bubble Insulation","sqft"],["Thermal Insulation","sqft"],["Silicone Sealant","pcs"],["PU Sealant","pcs"]
 ];
 
 export default function Materials({onBack}){
