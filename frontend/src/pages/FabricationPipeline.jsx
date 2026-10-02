@@ -106,14 +106,23 @@ export default function FabricationPipeline({ onBack, onEnquiries }) {
 
   async function addMaterial(order){
     const d=materialDrafts[order.id]||{};
-    if(!d.materialId || !d.qty || Number(d.qty)<=0){setError("Material aur quantity select karna zaroori hai.");return;}
+    const name=String(d.materialName||"").trim();
+    const qty=Number(d.qty);
+    if(!name || !d.qty || qty<=0){setError("Material ka naam aur quantity bharna zaroori hai.");return;}
     setWorkingId(order.id);setError("");
     try{
-      const material=materials.find(x=>String(x.id)===String(d.materialId));
-      const {data}=await api.post(`/api/v1/workshop-materials/${d.materialId}/transaction`,{txn_type:"out",qty:Number(d.qty),rate:material?.rate||0,work_order_id:order.id,notes:`Material for ${order.customer} - ${order.work}`});
-      setJobMaterials(v=>({...v,[order.id]:[{...data,material_name:material?.name||"Material"},...(v[order.id]||[])]}));
-      setMaterials(v=>v.map(x=>x.id===Number(d.materialId)?{...x,stock_qty:Number(x.stock_qty||0)-Number(d.qty)}:x));
-      setMaterialDrafts(v=>({...v,[order.id]:{materialId:"",qty:""}}));
+      let material=materials.find(x=>String(x.name||"").trim().toLowerCase()===name.toLowerCase());
+      if(!material){
+        const created=await api.post("/api/v1/workshop-materials",{
+          name, unit:d.unit||"pcs", stock_qty:qty, min_stock_qty:0, rate:Number(d.rate||0), supplier:""
+        });
+        material=created.data;
+        setMaterials(v=>[material,...v]);
+      }
+      const {data}=await api.post(`/api/v1/workshop-materials/${material.id}/transaction`,{txn_type:"out",qty,rate:Number(material.rate||0),work_order_id:order.id,notes:`Material for ${order.customer} - ${order.work}`});
+      setJobMaterials(v=>({...v,[order.id]:[{...data,material_name:material.name},...(v[order.id]||[])]}));
+      setMaterials(v=>v.map(x=>x.id===Number(material.id)?{...x,stock_qty:Number(x.stock_qty||0)-qty}:x));
+      setMaterialDrafts(v=>({...v,[order.id]:{materialName:"",unit:"pcs",qty:"",rate:""}}));
       setWorkingId(null);
     }catch(e){setError(e.response?.data?.detail||"Material add nahi hua.");setWorkingId(null);}
   }
@@ -195,7 +204,11 @@ export default function FabricationPipeline({ onBack, onEnquiries }) {
           {isMaterial&&<div className="pending-material-box">
             {(jobMaterials[job.id]||[]).length>0&&<div className="material-added-list">{jobMaterials[job.id].map(x=><span key={x.id}>✓ {x.material_name} × {x.qty}</span>)}</div>}
             <div className="pending-form">
-              <label><span>Material *</span><select value={materialDrafts[job.id]?.materialId||""} onChange={e=>setMaterialDrafts(v=>({...v,[job.id]:{...v[job.id],materialId:e.target.value}}))}><option value="">Select material</option>{materials.map(m=><option key={m.id} value={m.id}>{m.name} · Stock {m.stock_qty} {m.unit}</option>)}</select></label>
+              <label><span>Material Name *</span><input value={materialDrafts[job.id]?.materialName||""} onChange={e=>setMaterialDrafts(v=>({...v,[job.id]:{...v[job.id],materialName:e.target.value}}))} placeholder="Example: MS Square Pipe 2x2"/></label>
+              <div className="form-grid">
+                <label><span>Unit</span><input value={materialDrafts[job.id]?.unit||"pcs"} onChange={e=>setMaterialDrafts(v=>({...v,[job.id]:{...v[job.id],unit:e.target.value}}))} placeholder="ft / kg / pcs / sqft"/></label>
+                <label><span>Rate / Unit</span><input type="number" min="0" step="0.01" value={materialDrafts[job.id]?.rate||""} onChange={e=>setMaterialDrafts(v=>({...v,[job.id]:{...v[job.id],rate:e.target.value}}))} placeholder="Optional"/></label>
+              </div>
               <label><span>Quantity *</span><input type="number" min="0.01" step="0.01" value={materialDrafts[job.id]?.qty||""} onChange={e=>setMaterialDrafts(v=>({...v,[job.id]:{...v[job.id],qty:e.target.value}}))} placeholder="Qty"/></label>
               <button className="small" disabled={workingId===job.id} onClick={()=>addMaterial(job)}>{workingId===job.id?"Saving...":"Add Material"}</button>
             </div>
