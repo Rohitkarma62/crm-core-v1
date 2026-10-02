@@ -14,11 +14,19 @@ CATEGORIES = ["Material","Labour","Salary","Transport","Electricity","Rent","Too
 def employee_row(e):
     return {"id":e.id,"name":e.name,"phone":e.phone,"role":e.role,"wage_type":e.wage_type,"wage_amount":float(e.wage_amount or 0),"active":e.active}
 
-def attendance_row(a):
-    return {"id":a.id,"employee_id":a.employee_id,"date":a.work_date.date().isoformat(),"status":a.status,"days":float(a.days or 0),"amount":float(a.amount or 0),"notes":a.notes}
-
-def expense_row(e):
-    return {"id":e.id,"work_order_id":e.work_order_id,"employee_id":e.employee_id,"date":e.expense_date.date().isoformat(),"category":e.category,"title":e.title,"amount":float(e.amount or 0),"payment_method":e.payment_method,"notes":e.notes}
+def attendance_row(a, employee=None):
+    return {
+        "id": a.id,
+        "employee_id": a.employee_id,
+        "employee_name": employee.name if employee else None,
+        "employee_wage_type": employee.wage_type if employee else None,
+        "employee_wage_amount": float(employee.wage_amount or 0) if employee else 0,
+        "date": a.work_date.date().isoformat(),
+        "status": a.status,
+        "days": float(a.days or 0),
+        "amount": float(a.amount or 0),
+        "notes": a.notes,
+    }
 
 @router.get("/employees")
 def employees(db: Session=Depends(get_db), user: User=Depends(get_current_user)):
@@ -60,12 +68,13 @@ def mark_attendance(payload:dict,db:Session=Depends(get_db),user:User=Depends(ge
     db.flush()
     ex=WorkshopExpense(business_id=user.business_id,employee_id=emp.id,expense_date=dt,category="Salary",title=f"Salary - {emp.name}",amount=amount,payment_method=payload.get("payment_method"),notes=payload.get("notes"))
     db.add(ex);db.commit();db.refresh(a)
-    return attendance_row(a)
+    return attendance_row(a, emp)
 
 @router.get("/attendance")
 def attendance(db:Session=Depends(get_db),user:User=Depends(get_current_user)):
     rows=db.scalars(select(EmployeeAttendance).where(EmployeeAttendance.business_id==user.business_id).order_by(EmployeeAttendance.work_date.desc()).limit(200)).all()
-    return {"items":[attendance_row(x) for x in rows]}
+    employees_by_id = {e.id: e for e in db.scalars(select(Employee).where(Employee.business_id == user.business_id)).all()}
+    return {"items": [attendance_row(x, employees_by_id.get(x.employee_id)) for x in rows]}
 
 @router.get("/expenses")
 def expenses(db:Session=Depends(get_db),user:User=Depends(get_current_user)):
