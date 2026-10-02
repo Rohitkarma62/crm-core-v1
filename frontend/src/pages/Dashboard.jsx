@@ -10,19 +10,21 @@ export default function Dashboard({ onLogout, onEnquiries, onPipeline, onQuotati
   const [customers,setCustomers]=useState([]);
   const [leads,setLeads]=useState([]);
   const [expenseTotal,setExpenseTotal]=useState(0);
+  const [paymentTotal,setPaymentTotal]=useState(0);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState("");
 
   async function load(){
     setLoading(true);setError("");
     try{
-      const [o,c,l,e]=await Promise.all([
+      const [o,c,l,e,p]=await Promise.all([
         api.get("/api/v1/fabrication"),
         api.get("/api/v1/customers"),
         api.get("/api/v1/leads"),
-        api.get("/api/v1/workshop-finance/expenses")
+        api.get("/api/v1/workshop-finance/expenses"),
+        api.get("/api/v1/workshop-payments")
       ]);
-      setOrders(o.data.items||[]);setCustomers(c.data.items||[]);setLeads(l.data.items||[]);setExpenseTotal(e.data.total||0);
+      setOrders(o.data.items||[]);setCustomers(c.data.items||[]);setLeads(l.data.items||[]);setExpenseTotal(e.data.total||0);setPaymentTotal(Number(p.data.total||0));
     }catch(e){setError(e.response?.data?.detail||"Workshop data load nahi ho saka.");}
     finally{setLoading(false);}
   }
@@ -43,8 +45,10 @@ export default function Dashboard({ onLogout, onEnquiries, onPipeline, onQuotati
     ready:orders.filter(o=>o.stage==="Ready").length,
     orderValue:orders.reduce((a,o)=>a+Number(o.amount||0),0),
     expenses:expenseTotal,
-    estimatedProfit:orders.reduce((a,o)=>a+Number(o.amount||0),0)-expenseTotal
-  }),[leads,customers,orders,expenseTotal]);
+    estimatedProfit:orders.reduce((a,o)=>a+Number(o.amount||0),0)-expenseTotal,
+    received:paymentTotal,
+    outstanding:Math.max(0,orders.reduce((a,o)=>a+Number(o.amount||0),0)-paymentTotal)
+  }),[leads,customers,orders,expenseTotal,paymentTotal]);
 
   const stageCounts=useMemo(()=>["New Enquiry","Measurement","Quotation","Material Pending","Fabrication","Welding","Grinding","Painting","Ready","Delivered"].map(stage=>({stage,count:orders.filter(o=>o.stage===stage).length})),[orders]);
 
@@ -90,6 +94,8 @@ export default function Dashboard({ onLogout, onEnquiries, onPipeline, onQuotati
         <div className="stat"><span>In Production</span><b>{stats.production}</b></div>
         <div className="stat"><span>Ready</span><b>{stats.ready}</b></div>
         <div className="stat"><span>Order Value</span><b>{money(stats.orderValue)}</b></div>
+        <div className="stat payment-stat"><span>Customer Payment Received</span><b>{money(stats.received)}</b></div>
+        <div className="stat payment-stat"><span>Customer Outstanding</span><b>{money(stats.outstanding)}</b></div>
         <div className="stat"><span>Expenses</span><b>{money(stats.expenses)}</b></div>
         <div className="stat"><span>Balance After Expenses</span><b>{money(stats.estimatedProfit)}</b></div>
       </section>
