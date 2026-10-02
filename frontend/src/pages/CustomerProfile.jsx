@@ -57,6 +57,11 @@ export default function CustomerProfile({ customerId, onBack }) {
     setDocument({ type: "receipt", id: paymentId, receipt_number: r.data.receipt_number, data: r.data });
   }
 
+  async function workshopReceipt(paymentId) {
+    const r = await api.get("/api/v1/billing/workshop-payments/" + paymentId + "/receipt");
+    setDocument({ type: "workshop-receipt", id: paymentId, receipt_number: r.data.receipt_number, data: r.data });
+  }
+
   async function uploadProof(paymentId, file) {
     if (!file) return;
     setProofBusy(paymentId);
@@ -86,6 +91,11 @@ export default function CustomerProfile({ customerId, onBack }) {
   const selectedSale = document?.type === "invoice" ? data.sales.find(s => s.id === document.id) : null;
   const selectedJob = document?.type === "fabrication-invoice" ? (data.fabrication_jobs || []).find(j => j.id === document.id) : null;
   const selectedPayment = document?.type === "receipt" ? data.payments.find(p => p.id === document.id) : null;
+  const selectedWorkshopPayment = document?.type === "workshop-receipt" ? data.workshop_payments.find(p => p.id === document.id) : null;
+  const paymentHistory = [
+    ...data.payments.map(p => ({ ...p, payment_source: "crm" })),
+    ...data.workshop_payments.map(p => ({ ...p, payment_source: "workshop" })),
+  ].sort((a, b) => new Date(b.payment_date) - new Date(a.payment_date));
   const number = document?.invoice_number || document?.receipt_number || "";
 
   return <main className="page customer-profile-page">
@@ -135,19 +145,20 @@ export default function CustomerProfile({ customerId, onBack }) {
     </section>
 
     <section className="panel">
-      <div className="toolbar"><div><h2>Payment History & Proof</h2><span className="record-count">{data.payments.length} payment(s)</span></div></div>
+      <div className="toolbar"><div><h2>Payment History & Proof</h2><span className="record-count">{paymentHistory.length} payment(s)</span></div></div>
       <div className="profile-list">
-        {data.payments.length ? data.payments.map(p => {
-          const proofs = data.proofs.filter(x => x.payment_id === p.id);
-          return <div className="profile-row" key={p.id}>
+        {paymentHistory.length ? paymentHistory.map(p => {
+          const proofs = p.payment_source === "crm" ? data.proofs.filter(x => x.payment_id === p.id) : [];
+          return <div className="profile-row" key={p.payment_source + "-" + p.id}>
             <div>
               <strong>{money(p.amount)}</strong>
               <small>{date(p.payment_date)} • {p.payment_method || "Other"} • {p.reference || "No reference"}</small>
-              {proofs.length ? <div className="proof-list">{proofs.map(pr => <button className="proof-link" key={pr.id} onClick={async () => { const r = await api.get("/api/v1/billing/payment-proofs/" + pr.id, { responseType: "blob" }); window.open(URL.createObjectURL(r.data), "_blank", "noopener,noreferrer"); }}>{pr.filename}</button>)}</div> : <small>No payment proof uploaded</small>}
+              <small>{p.payment_source === "workshop" ? "Workshop payment • " + (p.notes || "Work order advance/payment") : "Customer payment"}</small>
+              {proofs.length ? <div className="proof-list">{proofs.map(pr => <button className="proof-link" key={pr.id} onClick={async () => { const r = await api.get("/api/v1/billing/payment-proofs/" + pr.id, { responseType: "blob" }); window.open(URL.createObjectURL(r.data), "_blank", "noopener,noreferrer"); }}>{pr.filename}</button>)}</div> : p.payment_source === "crm" ? <small>No payment proof uploaded</small> : null}
             </div>
             <div className="profile-row-actions">
-              <button className="small" onClick={() => receipt(p.id)}>Receipt</button>
-              <label className="small upload-btn">{proofBusy === p.id ? "Uploading..." : "Upload Proof"}<input type="file" accept="image/*,.pdf" disabled={proofBusy === p.id} onChange={e => uploadProof(p.id, e.target.files?.[0])} /></label>
+              <button className="small" onClick={() => p.payment_source === "workshop" ? workshopReceipt(p.id) : receipt(p.id)}>Payment Receipt</button>
+              {p.payment_source === "crm" && <label className="small upload-btn">{proofBusy === p.id ? "Uploading..." : "Upload Proof"}<input type="file" accept="image/*,.pdf" disabled={proofBusy === p.id} onChange={e => uploadProof(p.id, e.target.files?.[0])} /></label>}
             </div>
           </div>;
         }) : <div className="empty-state">No payments yet.</div>}
@@ -176,9 +187,9 @@ export default function CustomerProfile({ customerId, onBack }) {
             </div>
           </div>
           <div className="invoice-meta">
-            <h1>{document.type === "invoice" ? "बिल / चालान" : "भुगतान रसीद"}</h1>
+            <h1>{document.type === "invoice" || document.type === "fabrication-invoice" ? "बिल / चालान" : "भुगतान रसीद"}</h1>
             <p><b>क्रमांक:</b> {number}</p>
-            <p><b>दिनांक:</b> {dateOnly(selectedJob?.created_at || selectedSale?.sale_date || selectedPayment?.payment_date || new Date())}</p>
+            <p><b>दिनांक:</b> {dateOnly(selectedJob?.created_at || selectedSale?.sale_date || selectedPayment?.payment_date || selectedWorkshopPayment?.payment_date || new Date())}</p>
           </div>
         </div>
         <hr />
@@ -212,7 +223,20 @@ export default function CustomerProfile({ customerId, onBack }) {
           </div>
           <div className="invoice-status">{Number(docData.balance_amount || 0) <= 0 ? "PAID / भुगतान पूर्ण" : "PAYMENT DUE / भुगतान बाकी"}</div>
           {company?.warranty_text && <p className="invoice-warranty"><b>वारंटी:</b> {company.warranty_text}</p>}
-        </> : <table className="invoice-table"><tbody><tr><th>भुगतान राशि</th><td>{money(selectedPayment?.amount)}</td></tr><tr><th>दिनांक</th><td>{dateOnly(selectedPayment?.payment_date)}</td></tr><tr><th>माध्यम</th><td>{selectedPayment?.payment_method || "-"}</td></tr><tr><th>संदर्भ</th><td>{selectedPayment?.reference || "-"}</td></tr></tbody></table>}
+        </> : document.type === "workshop-receipt" ? <>
+          <table className="invoice-table"><tbody>
+            <tr><th>वर्क ऑर्डर</th><td>{docData.fabrication?.work || "फैब्रिकेशन कार्य"}</td></tr>
+            <tr><th>कुल जॉब राशि</th><td>{money(docData.fabrication?.amount)}</td></tr>
+            <tr><th>इस भुगतान की राशि</th><td>{money(selectedWorkshopPayment?.amount)}</td></tr>
+            <tr><th>भुगतान दिनांक</th><td>{dateOnly(selectedWorkshopPayment?.payment_date)}</td></tr>
+            <tr><th>भुगतान माध्यम</th><td>{selectedWorkshopPayment?.payment_method || "-"}</td></tr>
+            <tr><th>संदर्भ</th><td>{selectedWorkshopPayment?.reference || "-"}</td></tr>
+            <tr><th>अब तक कुल भुगतान</th><td>{money(docData.paid_amount)}</td></tr>
+            <tr className="invoice-balance"><th>बाकी राशि</th><td>{money(docData.balance_amount)}</td></tr>
+          </tbody></table>
+          <div className="invoice-status">ADVANCE / PAYMENT RECEIVED</div>
+          {company?.warranty_text && <p className="invoice-warranty"><b>वारंटी:</b> {company.warranty_text}</p>}
+        </> : <table className="invoice-table"><tbody><tr><th>भुगतान राशि</th><td>{money(selectedPayment?.amount)}</td></tr><tr><th>दिनांक</th><td>{dateOnly(selectedPayment?.payment_date)}</td></tr><tr><th>माध्यम</th><td>{selectedPayment?.payment_method || "-"}</td></tr><tr><th>संदर्भ</th><td>{selectedPayment?.reference || "-"}</td></tr></tbody></table>
         <div className="invoice-footer">
           <div><p>धन्यवाद!</p><p>कृपया भुगतान रसीद/बिल सुरक्षित रखें।</p></div>
           <div className="invoice-signatures">
