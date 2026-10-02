@@ -236,7 +236,7 @@ export default function CustomerProfile({ customerId, onBack }) {
           </tbody></table>
           <div className="invoice-status">ADVANCE / PAYMENT RECEIVED</div>
           {company?.warranty_text && <p className="invoice-warranty"><b>वारंटी:</b> {company.warranty_text}</p>}
-        </> : <table className="invoice-table"><tbody><tr><th>भुगतान राशि</th><td>{money(selectedPayment?.amount)}</td></tr><tr><th>दिनांक</th><td>{dateOnly(selectedPayment?.payment_date)}</td></tr><tr><th>माध्यम</th><td>{selectedPayment?.payment_method || "-"}</td></tr><tr><th>संदर्भ</th><td>{selectedPayment?.reference || "-"}</td></tr></tbody></table>
+        </> : <table className="invoice-table"><tbody><tr><th>भुगतान राशि</th><td>{money(selectedPayment?.amount)}</td></tr><tr><th>दिनांक</th><td>{dateOnly(selectedPayment?.payment_date)}</td></tr><tr><th>माध्यम</th><td>{selectedPayment?.payment_method || "-"}</td></tr><tr><th>संदर्भ</th><td>{selectedPayment?.reference || "-"}</td></tr></tbody></table>}
         <div className="invoice-footer">
           <div><p>धन्यवाद!</p><p>कृपया भुगतान रसीद/बिल सुरक्षित रखें।</p></div>
           <div className="invoice-signatures">
