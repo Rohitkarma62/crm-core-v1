@@ -121,6 +121,17 @@ def invoice_data(sale_id:int,db:Session=Depends(get_db),user:User=Depends(get_cu
     paid=sum((p.amount for p in payments if p.status=="completed"),start=0)
     return {"invoice_number":inv.invoice_number,"sale":s,"customer":c,"payments":payments,"paid_amount":paid,"balance_amount":max(s.amount-paid,0),"company":get_company(db,user)}
 
+@router.get("/fabrication/{order_id}/invoice")
+def fabrication_invoice_data(order_id:int,db:Session=Depends(get_db),user:User=Depends(get_current_user)):
+    order=db.scalar(select(FabricationOrder).where(FabricationOrder.id==order_id,FabricationOrder.business_id==user.business_id))
+    if not order: raise HTTPException(404,"Fabrication work order not found")
+    customer=db.scalar(select(Customer).where(Customer.id==order.customer_id,Customer.business_id==user.business_id)) if order.customer_id else None
+    payments=db.scalars(select(WorkshopPayment).where(WorkshopPayment.work_order_id==order.id,WorkshopPayment.business_id==user.business_id).order_by(WorkshopPayment.payment_date)).all()
+    paid=sum((p.amount for p in payments),start=0)
+    company=get_company(db,user)
+    prefix=company.get("invoice_prefix") or "INV"
+    return {"invoice_number":f"{prefix}-WO-{order.id:05d}","fabrication":order,"customer":customer,"payments":payments,"paid_amount":paid,"balance_amount":max(order.amount-paid,0),"company":company}
+
 @router.get("/payments/{payment_id}/receipt")
 def receipt_data(payment_id:int,db:Session=Depends(get_db),user:User=Depends(get_current_user)):
     p=payment_or_404(payment_id,user,db); c=db.get(Customer,p.customer_id); r=receipt_for(p,user,db)
