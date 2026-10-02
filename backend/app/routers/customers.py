@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..dependencies import get_current_user
 from ..models.core import User
-from ..models.crm import Activity, Customer, Lead, LeadStatus, Sale, Payment
+from ..models.crm import Activity, Customer, Lead, LeadStatus, Sale, Payment, FabricationOrder, WorkshopPayment
 from ..models.billing import Invoice, Receipt, PaymentProof
 from ..schemas.customers import CustomerCreate, CustomerListResponse, CustomerResponse, CustomerUpdate
 
