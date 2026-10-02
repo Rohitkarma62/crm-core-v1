@@ -47,6 +47,11 @@ export default function CustomerProfile({ customerId, onBack }) {
     setDocument({ type: "invoice", id: saleId, invoice_number: r.data.invoice_number, data: r.data });
   }
 
+  async function fabricationInvoice(jobId) {
+    const r = await api.get("/api/v1/billing/fabrication/" + jobId + "/invoice");
+    setDocument({ type: "fabrication-invoice", id: jobId, invoice_number: r.data.invoice_number, data: r.data });
+  }
+
   async function receipt(paymentId) {
     const r = await api.get("/api/v1/billing/payments/" + paymentId + "/receipt");
     setDocument({ type: "receipt", id: paymentId, receipt_number: r.data.receipt_number, data: r.data });
@@ -79,6 +84,7 @@ export default function CustomerProfile({ customerId, onBack }) {
   const c = data.customer;
   const docData = document?.data;
   const selectedSale = document?.type === "invoice" ? data.sales.find(s => s.id === document.id) : null;
+  const selectedJob = document?.type === "fabrication-invoice" ? (data.fabrication_jobs || []).find(j => j.id === document.id) : null;
   const selectedPayment = document?.type === "receipt" ? data.payments.find(p => p.id === document.id) : null;
   const number = document?.invoice_number || document?.receipt_number || "";
 
@@ -123,7 +129,7 @@ export default function CustomerProfile({ customerId, onBack }) {
       <div className="profile-list">
         {fabricationJobs.length ? fabricationJobs.map(job => <div className="profile-row" key={job.id}>
           <div><strong>{job.work}</strong><small>Stage: {job.stage} • {job.measurement || "Measurement pending"}</small><small>{job.site || "Site not added"} • Delivery: {job.delivery ? dateOnly(job.delivery) : "-"}</small></div>
-          <div className="profile-row-actions"><strong>{money(job.amount)}</strong></div>
+          <div className="profile-row-actions"><strong>{money(job.amount)}</strong><button className="small" onClick={() => fabricationInvoice(job.id)}>Bill</button></div>
         </div>) : <div className="empty-state">No linked fabrication jobs yet.</div>}
       </div>
     </section>
@@ -154,7 +160,7 @@ export default function CustomerProfile({ customerId, onBack }) {
     </section>
 
     {docData && <section className="panel">
-      <div className="toolbar"><div><h2>{document.type === "invoice" ? "Bill Preview" : "Payment Receipt Preview"}</h2><span className="record-count">{number}</span></div>
+      <div className="toolbar"><div><h2>{document.type === "receipt" ? "Payment Receipt Preview" : "Bill Preview"}</h2><span className="record-count">{number}</span></div>
         <div className="document-actions"><button onClick={() => captureInvoice(previewRef.current, number, "pdf")}>PDF</button><button onClick={() => captureInvoice(previewRef.current, number, "png")}>Image</button></div>
       </div>
       <div ref={previewRef} className="invoice-preview">
@@ -172,7 +178,7 @@ export default function CustomerProfile({ customerId, onBack }) {
           <div className="invoice-meta">
             <h1>{document.type === "invoice" ? "बिल / चालान" : "भुगतान रसीद"}</h1>
             <p><b>क्रमांक:</b> {number}</p>
-            <p><b>दिनांक:</b> {dateOnly(selectedSale?.sale_date || selectedPayment?.payment_date || new Date())}</p>
+            <p><b>दिनांक:</b> {dateOnly(selectedJob?.created_at || selectedSale?.sale_date || selectedPayment?.payment_date || new Date())}</p>
           </div>
         </div>
         <hr />
@@ -181,7 +187,19 @@ export default function CustomerProfile({ customerId, onBack }) {
           <div><span>मोबाइल</span><strong>{c.phone || "-"}</strong></div>
           <div><span>पता</span><strong>{c.address || "-"}</strong></div>
         </div>
-        {document.type === "invoice" ? <>
+        {document.type === "fabrication-invoice" ? <>
+          <table className="invoice-table"><thead><tr><th>क्र.</th><th>कार्य / विवरण</th><th>माप</th><th>राशि</th></tr></thead><tbody>
+            <tr><td>1</td><td>{selectedJob?.work || "फैब्रिकेशन कार्य"}</td><td>{selectedJob?.measurement || "-"}</td><td>{money(selectedJob?.amount)}</td></tr>
+            <tr className="invoice-total"><td colSpan="3">कुल बिल</td><td>{money(selectedJob?.amount)}</td></tr>
+            <tr><td colSpan="3">कुल भुगतान</td><td>{money(docData.paid_amount)}</td></tr>
+            <tr className="invoice-balance"><td colSpan="3">बाकी राशि</td><td>{money(docData.balance_amount)}</td></tr>
+          </tbody></table>
+          <div className="invoice-payment-box"><h3>भुगतान विवरण</h3>
+            {docData.payments.length ? docData.payments.map(p => <div className="invoice-payment-row" key={p.id}><span>{dateOnly(p.payment_date)}</span><span>{p.payment_method || "Other"}</span><span>{money(p.amount)}</span><span>{p.reference || "-"}</span></div>) : <p>कोई भुगतान दर्ज नहीं है।</p>}
+          </div>
+          <div className="invoice-status">{Number(docData.balance_amount || 0) <= 0 ? "PAID / भुगतान पूर्ण" : "PAYMENT DUE / भुगतान बाकी"}</div>
+          {company?.warranty_text && <p className="invoice-warranty"><b>वारंटी:</b> {company.warranty_text}</p>}
+        </> : document.type === "invoice" ? <>
           <table className="invoice-table"><thead><tr><th>क्र.</th><th>कार्य / विवरण</th><th>राशि</th></tr></thead><tbody>
             <tr><td>1</td><td>{selectedSale?.notes || "फैब्रिकेशन कार्य"}</td><td>{money(selectedSale?.amount)}</td></tr>
             <tr className="invoice-total"><td colSpan="2">कुल बिल</td><td>{money(selectedSale?.amount)}</td></tr>
