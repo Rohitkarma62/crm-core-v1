@@ -11,6 +11,19 @@ from ..models.crm import Employee, EmployeeAttendance, WorkshopExpense, Fabricat
 router = APIRouter(prefix="/api/v1/workshop-finance", tags=["Workshop Finance"])
 CATEGORIES = ["Material","Labour","Salary","Transport","Electricity","Rent","Tools","Food/Tea","Repair","Other"]
 
+def expense_row(e):
+    return {
+        "id": e.id,
+        "work_order_id": e.work_order_id,
+        "employee_id": e.employee_id,
+        "date": e.expense_date.isoformat() if e.expense_date else None,
+        "category": e.category,
+        "title": e.title,
+        "amount": float(e.amount or 0),
+        "payment_method": e.payment_method,
+        "notes": e.notes,
+    }
+
 def employee_row(e):
     return {"id":e.id,"name":e.name,"phone":e.phone,"role":e.role,"wage_type":e.wage_type,"wage_amount":float(e.wage_amount or 0),"active":e.active}
 
