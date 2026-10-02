@@ -13,8 +13,27 @@ export default function FabricationPipeline({ onBack, onEnquiries }) {
 
   async function load(){
     setLoading(true);setError("");
-    try{const [o,l]=await Promise.all([api.get("/api/v1/fabrication"),api.get("/api/v1/leads",{params:{page_size:100}})]);
-      setOrders(o.data.items||[]); setLeads(l.data.items||[]);}
+    try{
+      const [o,l]=await Promise.all([
+        api.get("/api/v1/fabrication"),
+        api.get("/api/v1/leads",{params:{page_size:100}})
+      ]);
+      const fabricationOrders=o.data.items||[];
+      const allLeads=l.data.items||[];
+
+      // Once an enquiry has been converted into a Work Order, it must not
+      // come back as a fresh "New Enquiry" after refresh.
+      const convertedLeadIds=new Set(
+        fabricationOrders
+          .map(order=>order.lead_id)
+          .filter(id=>id !== null && id !== undefined)
+          .map(Number)
+      );
+      const openLeads=allLeads.filter(lead=>!convertedLeadIds.has(Number(lead.id)));
+
+      setOrders(fabricationOrders);
+      setLeads(openLeads);
+    }
     catch(e){setError(e.response?.data?.detail||"Pipeline load nahi hua.");}
     finally{setLoading(false);}
   }
