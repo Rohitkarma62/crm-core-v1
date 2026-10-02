@@ -10,13 +10,14 @@ export default function Expenses({onBack}){
  useEffect(()=>{load()},[]);
  async function addExpense(e){e.preventDefault();try{await api.post("/api/v1/workshop-finance/expenses",form);setForm(blank);load()}catch(e){setError(e.response?.data?.detail||"Expense save nahi hua.")}}
  async function addSalary(e){e.preventDefault();if(!salary.employee_id){setError("Employee select karein.");return}try{await api.post("/api/v1/workshop-finance/attendance",salary);setSalary({...salary,days:"1",notes:""});load()}catch(e){setError(e.response?.data?.detail||"Salary entry save nahi hui.")}}
- const emp=employees.find(x=>String(x.id)===String(salary.employee_id));
+ const salaryEmployees = employees.length ? employees : attendance.filter(x=>x.employee_id).map(x=>({id:x.employee_id,name:x.employee_name||`Employee #${x.employee_id}`,active:true,wage_type:x.employee_wage_type||"daily",wage_amount:x.employee_wage_amount||0}));
+ const emp=salaryEmployees.find(x=>String(x.id)===String(salary.employee_id));
  const expected=emp&&emp.wage_type==="daily"?Number(emp.wage_amount||0)*Number(salary.days||0):0;
  return <main className="page workshop-page expenses-page"><div className="page-head"><div><button className="secondary" onClick={onBack}>← Dashboard</button><h1>💰 Expenses & Salary</h1><p className="form-help">Shop ke har kharche ko record karein aur majdur ki daily attendance se salary expense banayein.</p></div></div>
  <section className="fab-stats"><div><span>Total Expenses</span><strong>{money(total)}</strong></div><div><span>Employees</span><strong>{employees.length}</strong></div><div><span>Salary Entries</span><strong>{attendance.length}</strong></div></section>
  {error&&<p className="error">{error}</p>}
  <section className="panel"><div className="panel-heading"><h2>👷 Daily Majdur Salary</h2><p>Attendance ke basis par labour salary expense record karein.</p></div><form className="form-grid workshop-form" onSubmit={addSalary}>
- <label><span>Employee *</span><select value={salary.employee_id} onChange={e=>setSalary({...salary,employee_id:e.target.value})}><option value="">Select employee</option>{employees.filter(x=>x.active).map(e=><option key={e.id} value={e.id}>{e.name} · {money(e.wage_amount)}/{e.wage_type==="daily"?"day":"month"}</option>)}</select></label>
+ <label><span>Employee *</span><select value={salary.employee_id} onChange={e=>setSalary({...salary,employee_id:e.target.value})}><option value="">Select employee</option>{salaryEmployees.filter(x=>x.active).map(e=><option key={e.id} value={e.id}>{e.name} · {money(e.wage_amount)}/{e.wage_type==="daily"?"day":"month"}</option>)}</select></label>
  <label><span>Date</span><input type="date" value={salary.date} onChange={e=>setSalary({...salary,date:e.target.value})}/></label>
  <label><span>Days / Half Day</span><input type="number" step="0.5" min="0.5" value={salary.days} onChange={e=>setSalary({...salary,days:e.target.value})}/></label>
  <label><span>Status</span><select value={salary.status} onChange={e=>setSalary({...salary,status:e.target.value})}><option value="present">Present</option><option value="half_day">Half Day</option><option value="absent">Absent</option></select></label>
