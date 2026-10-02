@@ -18,7 +18,7 @@ class CustomerUpdate(BaseModel):
 
 class CustomerPayment(BaseModel):
     id: int
-    sale_id: int
+    sale_id: int | None = None
     amount: float
     payment_method: str | None
     payment_date: datetime
