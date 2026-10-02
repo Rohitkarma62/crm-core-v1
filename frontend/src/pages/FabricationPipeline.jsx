@@ -13,13 +13,17 @@ export default function FabricationPipeline({ onBack, onEnquiries }) {
   const [assistantOpen,setAssistantOpen]=useState(false);
   const [workingId,setWorkingId]=useState(null);
   const [draft,setDraft]=useState({measurement:"",amount:""});
+  const [materials,setMaterials]=useState([]);
+  const [jobMaterials,setJobMaterials]=useState({});
+  const [materialDrafts,setMaterialDrafts]=useState({});
 
   async function load(){
     setLoading(true);setError("");
     try{
       const [o,l]=await Promise.all([
         api.get("/api/v1/fabrication"),
-        api.get("/api/v1/leads",{params:{page_size:100}})
+        api.get("/api/v1/leads",{params:{page_size:100}}),
+        api.get("/api/v1/workshop-materials")
       ]);
       const fabricationOrders=o.data.items||[];
       const allLeads=l.data.items||[];
@@ -30,6 +34,13 @@ export default function FabricationPipeline({ onBack, onEnquiries }) {
       const openLeads=allLeads.filter(lead=>!convertedLeadIds.has(Number(lead.id)));
       setOrders(fabricationOrders);
       setLeads(openLeads);
+      setMaterials(m.data.items||[]);
+      const pending=fabricationOrders.filter(x=>["Material Pending","Fabrication"].includes(x.stage));
+      const materialRows=await Promise.all(pending.map(async x=>{
+        try{const r=await api.get(`/api/v1/workshop-materials/work-order/${x.id}`);return [x.id,r.data.items||[]];}
+        catch{return [x.id,[]];}
+      }));
+      setJobMaterials(Object.fromEntries(materialRows));
     }catch(e){setError(e.response?.data?.detail||"Pipeline load nahi hua.");}
     finally{setLoading(false);}
   }
@@ -93,6 +104,29 @@ export default function FabricationPipeline({ onBack, onEnquiries }) {
     }
   }
 
+  async function addMaterial(order){
+    const d=materialDrafts[order.id]||{};
+    if(!d.materialId || !d.qty || Number(d.qty)<=0){setError("Material aur quantity select karna zaroori hai.");return;}
+    setWorkingId(order.id);setError("");
+    try{
+      const material=materials.find(x=>String(x.id)===String(d.materialId));
+      const {data}=await api.post(`/api/v1/workshop-materials/${d.materialId}/transaction`,{txn_type:"out",qty:Number(d.qty),rate:material?.rate||0,work_order_id:order.id,notes:`Material for ${order.customer} - ${order.work}`});
+      setJobMaterials(v=>({...v,[order.id]:[data,...(v[order.id]||[])]}));
+      setMaterialDrafts(v=>({...v,[order.id]:{materialId:"",qty:""}}));
+      setWorkingId(null);
+    }catch(e){setError(e.response?.data?.detail||"Material add nahi hua.");setWorkingId(null);}
+  }
+
+  async function approveMaterial(order){
+    if(!(jobMaterials[order.id]||[]).length){setError("Pehle kam se kam ek material add karein.");return;}
+    setWorkingId(order.id);setError("");
+    try{
+      const {data}=await api.put(`/api/v1/fabrication/${order.id}`,{stage:"Fabrication"});
+      setOrders(v=>v.map(o=>o.id===order.id?data:o));
+      setWorkingId(null);
+    }catch(e){setError(e.response?.data?.detail||"Material approval nahi hua.");setWorkingId(null);}
+  }
+
   function startAssistant(){
     setAssistantOpen(true);
     setError("");
@@ -119,7 +153,7 @@ export default function FabricationPipeline({ onBack, onEnquiries }) {
   const counts=useMemo(()=>Object.fromEntries(stages.map(s=>[s,cardsByStage[s].length])),[cardsByStage]);
   const pendingJobs=useMemo(()=>[
     ...leads.map(l=>({kind:"enquiry",id:`lead-${l.id}`,customer:l.name,phone:l.phone,work:l.interested_service||"Fabrication enquiry",amount:l.estimated_value||0})),
-    ...orders.filter(o=>["Measurement","Quotation"].includes(o.stage)).map(o=>({kind:o.stage==="Measurement"?"measurement":"quotation",...o}))
+    ...orders.filter(o=>["Measurement","Quotation","Material Pending"].includes(o.stage)).map(o=>({kind:o.stage==="Measurement"?"measurement":o.stage==="Quotation"?"quotation":"material",...o}))
   ],[orders,leads]);
 
   return <main className="page pipeline-page fabrication-pipeline-page">
@@ -144,6 +178,7 @@ export default function FabricationPipeline({ onBack, onEnquiries }) {
         const isMeasurement=job.kind==="measurement";
         const isQuotation=job.kind==="quotation";
         const isEnquiry=job.kind==="enquiry";
+        const isMaterial=job.kind==="material";
         return <article className="pending-work-card" key={job.id}>
           <div><strong>{job.customer}</strong><small>{job.phone||"No mobile"} · {job.work}</small></div>
           <span className="priority">{isEnquiry?"1. Measurement":isMeasurement?"2. Quotation":"3. Approve / Material"}</span>
@@ -155,6 +190,15 @@ export default function FabricationPipeline({ onBack, onEnquiries }) {
           {isQuotation&&<div className="pending-form">
             <label><span>Quotation Amount *</span><input type="number" value={draft.amount} onChange={e=>setDraft({...draft,amount:e.target.value})} placeholder="₹ Amount"/></label>
             <button className="small" disabled={workingId===job.id} onClick={()=>completeQuotation(job)}>{workingId===job.id?"Saving...":"Approve → Material Pending"}</button>
+          </div>}
+          {isMaterial&&<div className="pending-material-box">
+            {(jobMaterials[job.id]||[]).length>0&&<div className="material-added-list">{jobMaterials[job.id].map(x=><span key={x.id}>✓ {x.material_name} × {x.qty}</span>)}</div>}
+            <div className="pending-form">
+              <label><span>Material *</span><select value={materialDrafts[job.id]?.materialId||""} onChange={e=>setMaterialDrafts(v=>({...v,[job.id]:{...v[job.id],materialId:e.target.value}}))}><option value="">Select material</option>{materials.map(m=><option key={m.id} value={m.id}>{m.name} · Stock {m.stock_qty} {m.unit}</option>)}</select></label>
+              <label><span>Quantity *</span><input type="number" min="0.01" step="0.01" value={materialDrafts[job.id]?.qty||""} onChange={e=>setMaterialDrafts(v=>({...v,[job.id]:{...v[job.id],qty:e.target.value}}))} placeholder="Qty"/></label>
+              <button className="small" disabled={workingId===job.id} onClick={()=>addMaterial(job)}>{workingId===job.id?"Saving...":"Add Material"}</button>
+            </div>
+            <button className="small" disabled={workingId===job.id} onClick={()=>approveMaterial(job)}>✓ Material Approved → Fabrication</button>
           </div>}
         </article>;
       })}</div>}
