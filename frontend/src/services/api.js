@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "https://crm-core-v1-production.up.railway.app",
+  baseURL: import.meta.env.VITE_API_URL || "https://crm-core-v1-production-6934.up.railway.app",
   headers: { "Content-Type": "application/json" },
 });
 
