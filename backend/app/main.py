@@ -21,6 +21,10 @@ from .routers.workshop_reports import router as workshop_reports_router
 
 app = FastAPI(title=settings.app_name, version="1.0.0")
 
+@app.get("/", tags=["System"])
+def root():
+    return {"service": settings.app_name, "status": "ok", "health": "/health", "docs": "/docs"}
+
 allowed_origins = [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
 app.add_middleware(
     CORSMiddleware,
