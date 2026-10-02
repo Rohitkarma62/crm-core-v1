@@ -1,6 +1,7 @@
 """Add fabrication workshop orders."""
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import inspect
 
 revision = "20261002_fabrication_orders"
 down_revision = "20261001_password_reset"
@@ -8,6 +9,9 @@ branch_labels = None
 depends_on = None
 
 def upgrade():
+    bind = op.get_bind()
+    if inspect(bind).has_table("fabrication_orders"):
+        return
     op.create_table(
         "fabrication_orders",
         sa.Column("id", sa.Integer(), primary_key=True),
