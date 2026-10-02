@@ -32,12 +32,17 @@ def customer_response(customer: Customer, db: Session):
         .order_by(Payment.payment_date.desc())
     ).all()
 
-    total_sales = sum(float(s.amount or 0) for s in sales)
+    fabrication_orders = db.scalars(select(FabricationOrder).where(FabricationOrder.customer_id == customer.id, FabricationOrder.business_id == customer.business_id)).all()
+    workshop_payments = db.scalars(select(WorkshopPayment).where(WorkshopPayment.customer_id == customer.id, WorkshopPayment.business_id == customer.business_id)).all()
+    total_sales = sum(float(s.amount or 0) for s in sales) + sum(float(o.amount or 0) for o in fabrication_orders)
     completed = [p for p in payments if p.status == "completed"]
-    collected = sum(float(p.amount or 0) for p in completed)
+    collected = sum(float(p.amount or 0) for p in completed) + sum(float(p.amount or 0) for p in workshop_payments)
 
     breakup = {}
     for p in completed:
+        method = p.payment_method or "other"
+        breakup[method] = breakup.get(method, 0) + float(p.amount or 0)
+    for p in workshop_payments:
         method = p.payment_method or "other"
         breakup[method] = breakup.get(method, 0) + float(p.amount or 0)
 
@@ -72,6 +77,9 @@ def customer_response(customer: Customer, db: Session):
                 "reference": p.reference,
             }
             for p in payments
+        ] + [
+            {"id": p.id, "sale_id": None, "work_order_id": p.work_order_id, "amount": float(p.amount or 0), "payment_method": p.payment_method, "payment_date": p.payment_date, "status": "completed", "reference": p.reference}
+            for p in workshop_payments
         ],
     }
     return CustomerResponse.model_validate(data)
@@ -229,20 +237,24 @@ def customer_profile(
         .where(PaymentProof.business_id == user.business_id, Payment.customer_id == customer.id)
         .order_by(PaymentProof.uploaded_at.desc())
     ).all()
+    fabrication_orders = db.scalars(select(FabricationOrder).where(FabricationOrder.customer_id == customer.id, FabricationOrder.business_id == user.business_id)).all()
+    workshop_payments = db.scalars(select(WorkshopPayment).where(WorkshopPayment.customer_id == customer.id, WorkshopPayment.business_id == user.business_id).order_by(WorkshopPayment.payment_date.desc())).all()
     completed = [p for p in payments if p.status == "completed"]
-    total_sales = sum((s.amount for s in sales), start=0)
-    collected = sum((p.amount for p in completed), start=0)
+    total_sales = sum((s.amount for s in sales), start=0) + sum((o.amount for o in fabrication_orders), start=0)
+    collected = sum((p.amount for p in completed), start=0) + sum((p.amount for p in workshop_payments), start=0)
     return {
         "customer": CustomerResponse.model_validate(customer),
         "summary": {
             "total_sales": total_sales,
             "collected": collected,
             "outstanding": max(total_sales - collected, 0),
-            "payment_count": len(payments),
-            "invoice_count": len(invoices),
+            "payment_count": len(payments) + len(workshop_payments),
+            "invoice_count": len(invoices) + len(fabrication_orders),
         },
         "sales": sales,
         "payments": payments,
+        "workshop_payments": workshop_payments,
+        "fabrication_jobs": fabrication_orders,
         "invoices": invoices,
         "receipts": receipts,
         "proofs": [
