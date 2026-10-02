@@ -20,7 +20,7 @@ export default function FabricationPipeline({ onBack, onEnquiries }) {
   async function load(){
     setLoading(true);setError("");
     try{
-      const [o,l]=await Promise.all([
+      const [o,l,m]=await Promise.all([
         api.get("/api/v1/fabrication"),
         api.get("/api/v1/leads",{params:{page_size:100}}),
         api.get("/api/v1/workshop-materials")
@@ -111,7 +111,8 @@ export default function FabricationPipeline({ onBack, onEnquiries }) {
     try{
       const material=materials.find(x=>String(x.id)===String(d.materialId));
       const {data}=await api.post(`/api/v1/workshop-materials/${d.materialId}/transaction`,{txn_type:"out",qty:Number(d.qty),rate:material?.rate||0,work_order_id:order.id,notes:`Material for ${order.customer} - ${order.work}`});
-      setJobMaterials(v=>({...v,[order.id]:[data,...(v[order.id]||[])]}));
+      setJobMaterials(v=>({...v,[order.id]:[{...data,material_name:material?.name||"Material"},...(v[order.id]||[])]}));
+      setMaterials(v=>v.map(x=>x.id===Number(d.materialId)?{...x,stock_qty:Number(x.stock_qty||0)-Number(d.qty)}:x));
       setMaterialDrafts(v=>({...v,[order.id]:{materialId:"",qty:""}}));
       setWorkingId(null);
     }catch(e){setError(e.response?.data?.detail||"Material add nahi hua.");setWorkingId(null);}
