@@ -559,3 +559,9 @@ table tbody tr:last-child td{border-bottom:0}
   .pending-form button{width:100%}
   .pipeline-head-actions{grid-template-columns:1fr 1fr 1fr!important}
 }
+
+.pending-material-box{display:grid;gap:10px}
+.material-added-list{display:flex;flex-wrap:wrap;gap:7px}
+.material-added-list span{padding:6px 9px;border-radius:999px;background:#ecfdf5;color:#166534;font-size:12px;font-weight:700}
+.pending-material-box>.small{width:max-content}
+@media(max-width:700px){.pending-material-box>.small{width:100%}}
