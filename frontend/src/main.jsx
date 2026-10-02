@@ -77,9 +77,16 @@ function App() {
 
   if (resetToken) return <ResetPassword token={resetToken} onDone={() => { window.history.replaceState({}, "", window.location.pathname); setMode("login"); }} />;
 
-  return mode === "login"
-    ? <><Login onAuthenticated={() => setAuth(true)} /><button className="switch" onClick={() => setMode("register")}>Create a new business account</button></>
-    : <><Register onAuthenticated={() => setAuth(true)} /><button className="switch" onClick={() => setMode("login")}>Already have an account? Sign in</button></>;
+  return (
+    <main className="auth-page">
+      <div className="auth-shell">
+        {mode === "login" ? <Login onAuthenticated={() => setAuth(true)} /> : <Register onAuthenticated={() => setAuth(true)} />}
+        <button className="switch" onClick={() => setMode(mode === "login" ? "register" : "login")}>
+          {mode === "login" ? "Create a new business account" : "Already have an account? Sign in"}
+        </button>
+      </div>
+    </main>
+  );
 }
 
 createRoot(document.getElementById("root")).render(
