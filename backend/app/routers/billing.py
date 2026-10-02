@@ -13,6 +13,7 @@ from ..models.crm import (
 from ..models.billing import BusinessAsset, Invoice, PaymentProof, Receipt
 
 router = APIRouter(prefix="/api/v1/billing", tags=["Billing & Documents"])
+# Production receipt endpoint included for workshop advance/payment receipts.
 DEFAULT_WARRANTY = "इस बिल में दिए गए फैब्रिकेशन कार्य पर बिल की तारीख से 1 माह की वारंटी दी जाती है। वारंटी केवल निर्माण/फैब्रिकेशन से संबंधित दोषों पर लागू होगी। गलत उपयोग, बाहरी क्षति, प्राकृतिक कारणों अथवा सामान्य टूट-फूट से हुई क्षति वारंटी में शामिल नहीं होगी।"
 ASSET_TYPES = {"logo": {"image/png","image/jpeg","image/webp"}, "signature": {"image/png","image/jpeg","image/webp"}, "stamp": {"image/png","image/jpeg","image/webp"}}
 
