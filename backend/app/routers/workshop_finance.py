@@ -106,15 +106,40 @@ def mark_attendance(payload:dict,db:Session=Depends(get_db),user:User=Depends(ge
     if not emp: raise HTTPException(400,"Invalid employee")
     try:
         dt=datetime.fromisoformat(payload["date"]) if payload.get("date") else datetime.utcnow()
-        days=Decimal(str(payload.get("days") or 1))
-    except (ValueError,TypeError,ArithmeticError) as exc: raise HTTPException(400,"Invalid date or days") from exc
-    if days<=0: raise HTTPException(400,"Days must be greater than 0")
-    amount=days*Decimal(emp.wage_amount or 0) if emp.wage_type=="daily" else Decimal(str(payload.get("amount") or 0))
-    a=EmployeeAttendance(business_id=user.business_id,employee_id=emp.id,work_date=dt,status=payload.get("status") or "present",days=days,amount=amount,notes=payload.get("notes"))
+    except (ValueError,TypeError,ArithmeticError) as exc:
+        raise HTTPException(400,"Invalid date") from exc
+
+    status=str(payload.get("status") or "present").strip().lower()
+    if status not in {"present","half_day","absent"}:
+        raise HTTPException(400,"Invalid attendance status")
+
+    if status == "absent":
+        days = Decimal("0")
+    elif status == "half_day":
+        days = Decimal("0.5")
+    else:
+        days = Decimal("1")
+
+    base_wage = Decimal(emp.wage_amount or 0)
+    amount = base_wage * days if emp.wage_type in {"daily","monthly"} else Decimal("0")
+
+    a=EmployeeAttendance(
+        business_id=user.business_id, employee_id=emp.id, work_date=dt,
+        status=status, days=days, amount=amount, notes=payload.get("notes")
+    )
     db.add(a)
     db.flush()
-    ex=WorkshopExpense(business_id=user.business_id,employee_id=emp.id,expense_date=dt,category="Salary",title=f"Salary - {emp.name}",amount=amount,payment_method=payload.get("payment_method"),notes=payload.get("notes"))
-    db.add(ex);db.commit();db.refresh(a)
+
+    if amount > 0:
+        ex=WorkshopExpense(
+            business_id=user.business_id, employee_id=emp.id, expense_date=dt,
+            category="Salary", title=f"Salary - {emp.name}", amount=amount,
+            payment_method=payload.get("payment_method"), notes=payload.get("notes")
+        )
+        db.add(ex)
+
+    db.commit()
+    db.refresh(a)
     return attendance_row(a, emp)
 
 @router.get("/attendance")
