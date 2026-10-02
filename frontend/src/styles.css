@@ -541,3 +541,21 @@ table tbody tr:last-child td{border-bottom:0}
   .expenses-page .table-wrap td:nth-child(6)::before{content:"Payment: ";font-weight:700;color:#64748b}
   .expenses-page .table-wrap td[colspan]{padding:18px!important;text-align:center}
 }
+
+
+/* Pending Work Assistant */
+.pending-assistant{border:1px solid #dbe4f0}
+.pending-work-list{display:grid;gap:12px;margin-top:14px}
+.pending-work-card{display:grid;gap:10px;padding:14px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc}
+.pending-work-card>div:first-child{display:grid;gap:3px}
+.pending-work-card>div:first-child small{color:#64748b}
+.pending-work-card .priority{width:max-content}
+.pending-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end}
+.pending-form label{display:grid;gap:6px;font-size:13px;font-weight:700;color:#334155}
+.pending-form input{width:100%;min-height:42px;padding:9px 11px;border:1px solid #cbd5e1;border-radius:9px;background:#fff}
+.pending-form button{min-height:42px;white-space:nowrap}
+@media(max-width:700px){
+  .pending-form{grid-template-columns:1fr}
+  .pending-form button{width:100%}
+  .pipeline-head-actions{grid-template-columns:1fr 1fr 1fr!important}
+}
