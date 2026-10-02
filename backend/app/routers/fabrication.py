@@ -21,6 +21,17 @@ def row(o):
         "created_at": o.created_at.isoformat() if o.created_at else ""
     }
 
+@router.get("/available-customers")
+def available_customers(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    customers = db.scalars(select(Customer).where(Customer.business_id == user.business_id).order_by(Customer.name)).all()
+    leads = db.scalars(select(Lead).where(Lead.business_id == user.business_id).order_by(Lead.created_at.desc())).all()
+    customer_lead_ids = {c.lead_id for c in customers if c.lead_id is not None}
+    items = [{"type":"customer","id":c.id,"lead_id":c.lead_id,"name":c.name,"phone":c.phone or ""} for c in customers]
+    items += [{"type":"enquiry","id":l.id,"lead_id":l.id,"name":l.name,"phone":l.phone or "",
+               "work":l.interested_service or "", "amount":float(l.estimated_value or 0)}
+              for l in leads if l.id not in customer_lead_ids]
+    return {"items": items}
+
 @router.get("")
 def list_orders(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     items = db.scalars(select(FabricationOrder).where(FabricationOrder.business_id == user.business_id).order_by(FabricationOrder.created_at.desc())).all()
@@ -31,8 +42,21 @@ def create_order(payload: dict, db: Session = Depends(get_db), user: User = Depe
     cid = payload.get("customer_id"); lid = payload.get("lead_id")
     if cid is not None and not db.scalar(select(Customer.id).where(Customer.id == cid, Customer.business_id == user.business_id)):
         raise HTTPException(400, "Invalid customer")
-    if lid is not None and not db.scalar(select(Lead.id).where(Lead.id == lid, Lead.business_id == user.business_id)):
-        raise HTTPException(400, "Invalid lead")
+    lead = None
+    if lid is not None:
+        lead = db.scalar(select(Lead).where(Lead.id == lid, Lead.business_id == user.business_id))
+        if not lead:
+            raise HTTPException(400, "Invalid lead")
+        # An enquiry becomes a customer automatically when its first work order is created.
+        if cid is None:
+            customer = db.scalar(select(Customer).where(Customer.business_id == user.business_id, Customer.lead_id == lead.id))
+            if not customer:
+                customer = Customer(
+                    business_id=user.business_id, lead_id=lead.id, name=lead.name,
+                    phone=lead.phone, email=lead.email, company=lead.company, address=None
+                )
+                db.add(customer); db.flush()
+            cid = customer.id
     try:
         amount = Decimal(str(payload.get("amount") or 0))
         delivery = datetime.fromisoformat(payload["delivery"]) if payload.get("delivery") else None
